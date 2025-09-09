@@ -28,7 +28,7 @@ export default function App() {
           />
         );
       case "chat":
-        return <AIChatPage selectedAvatar={selectedAvatar || "Mike"} />;
+        return <AIChatPage selectedAvatar={selectedAvatar || "mike"} />;
       case "lawyers":
         return <LawyersPage />;
       case "community":

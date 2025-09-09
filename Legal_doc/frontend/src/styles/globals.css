@@ -41,6 +41,7 @@
   --sidebar-ring: #AEC6CF;
   --cta-color: #77DDE7;
   --cta-foreground: #36454F;
+  --gold-accent: #D4AF37;
 }
 
 .dark {
@@ -121,6 +122,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-cta: var(--cta-color);
   --color-cta-foreground: var(--cta-foreground);
+  --color-gold-accent: var(--gold-accent);
 }
 
 @layer base {
@@ -131,6 +133,8 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Removed animations as per design requirements */
 }
 
 /**
