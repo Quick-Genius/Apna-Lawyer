@@ -2,7 +2,9 @@ import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import Footer from "./Footer";
-import exampleImage from 'figma:asset/50e4234ba32f3a17fa4abf21568d7e5aef2fe1a0.png';
+import maleAvatar from 'figma:asset/97ff0412a73a940a79f34598c9917f35ad4f443f.png';
+import femaleAvatar from 'figma:asset/88905e86ae950652136a9f44d746d3ac18fe162e.png';
+import backgroundImage from 'figma:asset/78ee38db44766290dfe8abd673268b14928c5d43.png';
 import { 
   Upload, 
   Sparkles, 
@@ -29,13 +31,13 @@ interface ComprehensiveHomePageProps {
 export default function ComprehensiveHomePage({ onSelectAvatar, onNavigateToLawyers }: ComprehensiveHomePageProps) {
   const avatars = [
     {
-      id: "Mike",
+      id: "mike",
       name: "Mike",
       title: "Legal Expert", 
       description: "Professional male assistant"
     },
     {
-      id: "Anne",
+      id: "anne",
       name: "Anne", 
       title: "Legal Advisor",
       description: "Professional female assistant"
@@ -71,12 +73,13 @@ export default function ComprehensiveHomePage({ onSelectAvatar, onNavigateToLawy
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#AEC6CF] to-[#89CFF0] rounded-xl flex items-center justify-center shadow-md">
-                <Scale className="w-5 h-5 text-[#36454F]" />
+              <div className="w-10 h-10 bg-gradient-to-br from-[#AEC6CF] to-[#89CFF0] rounded-xl flex items-center justify-center shadow-md relative">
+                <Scale className="w-5 h-5 text-[#36454F] relative z-10" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/15 to-transparent rounded-xl"></div>
               </div>
               <div>
                 <h1 className="text-[#36454F] text-xl">Apna Lawyer</h1>
-                <p className="text-xs text-gray-500 -mt-1">Understand before you sign</p>
+                <p className="text-xs text-gray-500 -mt-1">Understand before you <span className="text-[#D4AF37]/80">sign</span></p>
               </div>
             </div>
 
@@ -92,11 +95,26 @@ export default function ComprehensiveHomePage({ onSelectAvatar, onNavigateToLawy
       </header>
 
       {/* Section 1: Hero & Avatar Selection */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Light Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#FCFCFC] via-[#F8F9FA] to-[#F1F3F4] pointer-events-none"></div>
+        {/* Background Image with lighter overlay */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
+          style={{
+            backgroundImage: `url(${backgroundImage})`,
+            opacity: 0.3
+          }}
+        ></div>
+        {/* Very subtle gold accent overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/2 via-transparent to-[#D4AF37]/1 pointer-events-none"></div>
+        
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           {/* Main Headline */}
-          <h1 className="text-5xl lg:text-6xl text-[#36454F] mb-6">
-            Choose Your Personal AI Legal Assistant
+          <h1 className="text-5xl lg:text-6xl text-[#36454F] mb-6 relative">
+            Choose Your Personal <span className="relative">AI Legal Assistant
+              <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent"></div>
+            </span>
           </h1>
           
           {/* Sub-headline */}
@@ -107,17 +125,14 @@ export default function ComprehensiveHomePage({ onSelectAvatar, onNavigateToLawy
           {/* Avatar Selection */}
           <div className="grid md:grid-cols-2 gap-12 max-w-3xl mx-auto mb-12">
             {avatars.map((avatar, index) => (
-              <Card key={avatar.id} className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer">
+              <Card key={avatar.id} className="bg-white/90 backdrop-blur-sm border border-gray-100/50 rounded-2xl shadow-sm hover:shadow-lg hover:shadow-[#D4AF37]/10 transition-all duration-300 group cursor-pointer hover:border-[#D4AF37]/20">
                 <CardContent className="p-8 text-center">
                   {/* Avatar Image Container */}
-                  <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden shadow-lg group-hover:scale-105 transition-transform duration-300">
+                  <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden shadow-lg transition-all duration-300 ring-2 ring-[#D4AF37]/20 group-hover:ring-[#D4AF37]/40">
                     <img 
-                      src={exampleImage} 
+                      src={avatar.id === "mike" ? maleAvatar : femaleAvatar} 
                       alt={avatar.name}
-                      className="w-full h-full object-cover"
-                      style={{
-                        transform: index === 1 ? 'scaleX(-1)' : 'none'
-                      }}
+                      className="w-full h-full object-cover object-center"
                     />
                   </div>
                   
@@ -128,7 +143,7 @@ export default function ComprehensiveHomePage({ onSelectAvatar, onNavigateToLawy
                   <Button 
                     onClick={() => onSelectAvatar(avatar.id)}
                     variant="outline"
-                    className="w-full border-[#AEC6CF] text-[#36454F] hover:bg-[#AEC6CF]/10 py-3 rounded-xl transition-all duration-300"
+                    className="w-full border-[#AEC6CF] text-[#36454F] hover:bg-gradient-to-r hover:from-[#AEC6CF]/10 hover:to-[#D4AF37]/10 py-3 rounded-xl transition-all duration-300 group-hover:border-[#D4AF37]/30"
                   >
                     Choose
                   </Button>
@@ -140,8 +155,8 @@ export default function ComprehensiveHomePage({ onSelectAvatar, onNavigateToLawy
           {/* Primary CTA */}
           <Button 
             size="lg"
-            onClick={() => onSelectAvatar("Mike")}
-            className="bg-[#77DDE7] hover:bg-[#77DDE7]/80 text-[#36454F] px-16 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 text-lg"
+            onClick={() => onSelectAvatar("mike")}
+            className="bg-[#77DDE7] hover:bg-[#77DDE7]/90 text-[#36454F] px-16 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 text-lg"
             style={{ backgroundColor: '#77DDE7', color: '#36454F' }}
           >
             Start Chatting Now
@@ -264,10 +279,11 @@ export default function ComprehensiveHomePage({ onSelectAvatar, onNavigateToLawy
                 <div key={index} className="text-center relative">
                   {/* Step Number & Icon */}
                   <div className="relative mb-8">
-                    <div className="w-24 h-24 bg-gradient-to-br from-[#AEC6CF] to-[#89CFF0] rounded-full flex items-center justify-center mx-auto shadow-lg">
+                    <div className="w-24 h-24 bg-gradient-to-br from-[#AEC6CF] to-[#89CFF0] rounded-full flex items-center justify-center mx-auto shadow-lg relative">
                       <Icon className="w-10 h-10 text-[#36454F]" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 to-transparent rounded-full"></div>
                     </div>
-                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#77DDE7] rounded-full flex items-center justify-center shadow-md">
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-[#77DDE7] to-[#D4AF37]/20 rounded-full flex items-center justify-center shadow-md">
                       <span className="text-[#36454F] text-sm font-medium">{step.number}</span>
                     </div>
                   </div>
@@ -288,7 +304,9 @@ export default function ComprehensiveHomePage({ onSelectAvatar, onNavigateToLawy
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#F9FAFB] to-[#F5E6CC]">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#F9FAFB] to-[#F5E6CC] relative">
+        {/* Subtle gold accent overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#D4AF37]/10 pointer-events-none"></div>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl lg:text-5xl text-[#36454F] mb-6">
             Ready to Understand Your Legal Documents?
@@ -299,7 +317,7 @@ export default function ComprehensiveHomePage({ onSelectAvatar, onNavigateToLawy
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg"
-              onClick={() => onSelectAvatar("Mike")}
+              onClick={() => onSelectAvatar("mike")}
               className="bg-[#77DDE7] hover:bg-[#77DDE7]/80 text-[#36454F] px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
               style={{ backgroundColor: '#77DDE7', color: '#36454F' }}
             >
