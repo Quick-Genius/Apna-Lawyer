@@ -1,12 +1,23 @@
-Django==5.0
+# Core Django packages
+Django==4.2.9
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
+
+# Image and PDF processing
 Pillow==10.0.1
 PyPDF2==3.0.1
 pytesseract==0.3.10
-langchain==0.1.0
+
+# LangChain and Google AI
+langchain==0.0.350
 langchain-community==0.0.10
-langchain-google-genai==0.0.6
-google-generativeai==0.3.2
+langchain-google-genai==0.0.5
+google-generativeai==0.3.1
+
+# Utilities
 python-dotenv==1.0.0
 requests==2.31.0
+
+# Build dependencies
+wheel>=0.42.0
+setuptools>=69.0.3
