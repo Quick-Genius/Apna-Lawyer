@@ -20,3 +20,16 @@ class DocumentSerializer(serializers.ModelSerializer):
             attrs['document_type'] = 'other'
         
         return attrs
+
+    def to_internal_value(self, data):
+        # Ensure title and document_type are set before validation
+        if 'file' in data and not data.get('title'):
+            filename = data['file'].name
+            data = data.copy()  # Make a mutable copy
+            data['title'] = os.path.splitext(filename)[0]
+        
+        if not data.get('document_type'):
+            data = data.copy() if not hasattr(data, 'copy') else data.copy()
+            data['document_type'] = 'other'
+        
+        return super().to_internal_value(data)

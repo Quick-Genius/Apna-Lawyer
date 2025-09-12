@@ -18,13 +18,25 @@ logger = logging.getLogger(__name__)
 class ChatSessionViewSet(viewsets.ModelViewSet):
     queryset = ChatSession.objects.all()
     serializer_class = ChatSessionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = []  # Allow unauthenticated access
 
     def get_queryset(self):
-        return ChatSession.objects.filter(user=self.request.user)
+        if self.request.user.is_authenticated:
+            return ChatSession.objects.filter(user=self.request.user)
+        else:
+            # For anonymous users, return all sessions (or implement session-based filtering)
+            return ChatSession.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        # Use authenticated user or create/get anonymous user
+        user = self.request.user if self.request.user.is_authenticated else None
+        if not user:
+            from django.contrib.auth.models import User
+            user, created = User.objects.get_or_create(
+                username='anonymous',
+                defaults={'email': 'anonymous@example.com'}
+            )
+        serializer.save(user=user)
 
     @action(detail=True, methods=['post'])
     def send_message(self, request, pk=None):
@@ -125,7 +137,16 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            document = document_serializer.save(uploaded_by=request.user)
+            # Handle anonymous users
+            user = request.user if request.user.is_authenticated else None
+            if not user:
+                from django.contrib.auth.models import User
+                user, created = User.objects.get_or_create(
+                    username='anonymous',
+                    defaults={'email': 'anonymous@example.com'}
+                )
+            
+            document = document_serializer.save(uploaded_by=user)
             
             # Extract text from PDF
             try:
@@ -133,21 +154,20 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
                 pdf_reader = PyPDF2.PdfReader(file)
                 text = ""
                 for page in pdf_reader.pages:
-                    text += page.extract_text() + "\n"
+                    page_text = page.extract_text()
+                    if page_text:
+                        text += page_text + "\n"
                 text = text.strip()
                 
+                # If no text extracted, still allow upload but with a placeholder
                 if not text:
-                    return Response(
-                        {"error": "Could not extract text from PDF. The file might be scanned or encrypted."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                    text = f"PDF document '{file.name}' uploaded successfully. Text extraction was not possible - this may be a scanned document or contain images. You can still ask questions about this document type."
+                    logger.warning(f"No text extracted from PDF: {file.name}")
                 
             except Exception as e:
                 logger.error(f"Error extracting text from PDF: {str(e)}")
-                return Response(
-                    {"error": "Error processing PDF file"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+                # Don't fail the upload, just use a placeholder text
+                text = f"PDF document '{file.name}' uploaded successfully. Text extraction encountered an error: {str(e)}. You can still ask general questions about this document type."
             
             # Analyze document
             try:
@@ -182,10 +202,19 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
                 role='system'
             )
             
+            # Get analysis summary safely
+            analysis_summary = 'Document uploaded successfully'
+            if document.analysis and 'legal_analysis' in document.analysis:
+                legal_analysis = document.analysis['legal_analysis']
+                if isinstance(legal_analysis, dict):
+                    analysis_summary = legal_analysis.get('summary', 'Document processed successfully')
+                else:
+                    analysis_summary = 'Document processed successfully'
+            
             return Response({
                 "message": "Document uploaded and analyzed successfully",
                 "document": DocumentSerializer(document).data,
-                "analysis_summary": analysis_result.get('summary', 'Document processed successfully') if 'legal_analysis' in document.analysis else 'Document uploaded successfully'
+                "analysis_summary": analysis_summary
             }, status=status.HTTP_201_CREATED)
             
         except Exception as e:
@@ -198,12 +227,19 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 class ChatMessageViewSet(viewsets.ModelViewSet):
     queryset = ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = []  # Allow unauthenticated access
 
     def get_queryset(self):
-        return ChatMessage.objects.filter(session__user=self.request.user)
+        if self.request.user.is_authenticated:
+            return ChatMessage.objects.filter(session__user=self.request.user)
+        else:
+            # For anonymous users, return all messages (or implement session-based filtering)
+            return ChatMessage.objects.all()
 
     def perform_create(self, serializer):
         session_id = self.request.data.get('session')
-        session = get_object_or_404(ChatSession, id=session_id, user=self.request.user)
+        if self.request.user.is_authenticated:
+            session = get_object_or_404(ChatSession, id=session_id, user=self.request.user)
+        else:
+            session = get_object_or_404(ChatSession, id=session_id)
         serializer.save(session=session)

@@ -9,14 +9,14 @@ interface AvatarSelectionPageProps {
 export default function AvatarSelectionPage({ onSelectAvatar }: AvatarSelectionPageProps) {
   const avatars = [
     {
-      id: "mike",
-      name: "Mike",
+      id: "rohan",
+      name: "Rohan",
       title: "Legal Expert", 
       description: "Professional male assistant"
     },
     {
-      id: "anne",
-      name: "Anne", 
+      id: "priya",
+      name: "Priya", 
       title: "Legal Advisor",
       description: "Professional female assistant"
     }
@@ -75,7 +75,7 @@ export default function AvatarSelectionPage({ onSelectAvatar }: AvatarSelectionP
         <div className="text-center">
           <Button 
             size="lg"
-            onClick={() => onSelectAvatar("mike")}
+            onClick={() => onSelectAvatar("rohan")}
             className="bg-[#77DDE7] hover:bg-[#77DDE7]/80 text-[#36454F] px-16 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 text-lg"
             style={{ backgroundColor: '#77DDE7', color: '#36454F' }}
           >

@@ -16,9 +16,9 @@ export interface ChatSession {
 }
 
 export const chatService = {
-    async createSession(documentId?: number): Promise<ChatSession> {
+    async createSession(title?: string): Promise<ChatSession> {
         const response = await api.post(`/chat/sessions/`, {
-            document_id: documentId
+            title: title || 'New Chat Session'
         });
         return response.data;
     },
@@ -26,12 +26,17 @@ export const chatService = {
     async uploadDocument(file: File) {
         const formData = new FormData();
         formData.append('file', file);
+        // Upload document without analyzing it
+        const response = await api.post(`/documents/upload_only/`, formData);
+        // Ensure caller receives the document object with id
+        return response.data?.document ?? response.data;
+    },
+
+    async uploadAndAnalyzeDocument(file: File) {
+        const formData = new FormData();
+        formData.append('file', file);
         // Calls custom action that uploads and analyzes in one step
-        const response = await api.post(`/documents/upload_and_analyze/`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
+        const response = await api.post(`/documents/upload_and_analyze/`, formData);
         // Ensure caller receives the document object with id
         return response.data?.document ?? response.data;
     },
@@ -48,6 +53,19 @@ export const chatService = {
             timestamp: ai?.timestamp ?? new Date().toISOString(),
             confidence: ai?.confidence,
         };
+    },
+
+    async uploadDocumentToSession(sessionId: number, file: File) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', file.name);
+        
+        const response = await api.post(`/chat/sessions/${sessionId}/upload_document/`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
     },
 
     async getSessions(): Promise<ChatSession[]> {

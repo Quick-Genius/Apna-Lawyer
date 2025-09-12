@@ -18,11 +18,19 @@ logger = logging.getLogger(__name__)
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = []  # Allow unauthenticated access for now
 
     def perform_create(self, serializer):
         try:
-            serializer.save(uploaded_by=self.request.user)
+            # Use a default user if not authenticated
+            user = self.request.user if self.request.user.is_authenticated else None
+            if not user:
+                from django.contrib.auth.models import User
+                user, created = User.objects.get_or_create(
+                    username='anonymous',
+                    defaults={'email': 'anonymous@example.com'}
+                )
+            serializer.save(uploaded_by=user)
         except ValidationError as e:
             raise ValidationError(detail=str(e))
         except Exception as e:
@@ -46,7 +54,11 @@ class DocumentViewSet(viewsets.ModelViewSet):
         return text
 
     def get_queryset(self):
-        return Document.objects.filter(uploaded_by=self.request.user)
+        if self.request.user.is_authenticated:
+            return Document.objects.filter(uploaded_by=self.request.user)
+        else:
+            # For anonymous users, return all documents (or implement session-based filtering)
+            return Document.objects.all()
 
     @action(detail=True, methods=['post'])
     def analyze(self, request, pk=None):
@@ -108,6 +120,47 @@ class DocumentViewSet(viewsets.ModelViewSet):
             )
 
     @action(detail=False, methods=['post'])
+    def upload_only(self, request):
+        """Upload a document without analyzing it"""
+        try:
+            logger.debug(f"Received upload request with data: {request.data}")
+            
+            serializer = self.get_serializer(data=request.data)
+            
+            if not serializer.is_valid():
+                logger.error(f"Serializer validation failed: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                # Use a default user if not authenticated
+                user = request.user if request.user.is_authenticated else None
+                if not user:
+                    from django.contrib.auth.models import User
+                    user, created = User.objects.get_or_create(
+                        username='anonymous',
+                        defaults={'email': 'anonymous@example.com'}
+                    )
+                document = serializer.save(uploaded_by=user)
+            except Exception as e:
+                logger.error(f"Error saving document: {str(e)}")
+                return Response(
+                    {"error": "Failed to save document", "detail": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            return Response({
+                "document": DocumentSerializer(document).data,
+                "message": "Document uploaded successfully"
+            }, status=status.HTTP_201_CREATED)
+                
+        except Exception as e:
+            logger.error(f"Unexpected error in upload_only: {str(e)}")
+            return Response(
+                {"error": "An unexpected error occurred", "detail": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['post'])
     def upload_and_analyze(self, request):
         """Upload a document and automatically analyze it"""
         try:
@@ -121,7 +174,15 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             try:
-                document = serializer.save(uploaded_by=request.user)
+                # Use a default user if not authenticated
+                user = request.user if request.user.is_authenticated else None
+                if not user:
+                    from django.contrib.auth.models import User
+                    user, created = User.objects.get_or_create(
+                        username='anonymous',
+                        defaults={'email': 'anonymous@example.com'}
+                    )
+                document = serializer.save(uploaded_by=user)
             except Exception as e:
                 logger.error(f"Error saving document: {str(e)}")
                 return Response(
@@ -131,16 +192,36 @@ class DocumentViewSet(viewsets.ModelViewSet):
             
             # Automatically trigger analysis
             try:
-                analyze_response = self.analyze(request, pk=document.id)
+                # Reset file pointer to beginning
+                document.file.seek(0)
                 
-                if analyze_response.status_code == 200:
-                    return Response({
-                        "document": DocumentSerializer(document).data,
-                        "analysis": document.analysis
-                    }, status=status.HTTP_201_CREATED)
+                # Extract text based on file type
+                if document.file.name.lower().endswith('.pdf'):
+                    text = self.extract_text_from_pdf(document.file)
+                elif document.file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    text = self.extract_text_from_image(document.file)
                 else:
-                    logger.error(f"Analysis failed with status {analyze_response.status_code}")
-                    return analyze_response
+                    return Response(
+                        {"error": "Unsupported file format"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                # Use LegalDocumentAnalyzer for comprehensive analysis
+                analyzer = LegalDocumentAnalyzer()
+                analysis_result = analyzer.analyze_document(text)
+                
+                # Store both extracted text and analysis
+                document.analysis = {
+                    "extracted_text": text,
+                    "legal_analysis": analysis_result
+                }
+                document.is_processed = True
+                document.save()
+
+                return Response({
+                    "document": DocumentSerializer(document).data,
+                    "analysis": document.analysis
+                }, status=status.HTTP_201_CREATED)
                     
             except Exception as e:
                 logger.error(f"Error during document analysis: {str(e)}")
