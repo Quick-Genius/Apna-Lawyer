@@ -2,16 +2,23 @@
 # exit on error
 set -o errexit
 
-# Upgrade pip and install build dependencies first
-python -m pip install --upgrade pip
-python -m pip install --upgrade wheel setuptools
+# Install system dependencies for Pillow
+apt-get update && apt-get install -y \
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel \
+    python3-cffi \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info
 
-# Force use of binary packages when available (avoid building from source)
-pip install --only-binary :all: Pillow==10.2.0
+# Install project dependencies using Poetry
+poetry install --no-interaction --no-ansi
 
-# Install remaining requirements
-pip install -r requirements.txt
-
-# Run Django migrations
-python manage.py collectstatic --noinput
-python manage.py migrate
+# Run Django commands
+poetry run python manage.py collectstatic --noinput
+poetry run python manage.py migrate
