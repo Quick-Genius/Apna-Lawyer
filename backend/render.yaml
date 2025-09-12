@@ -3,8 +3,12 @@ services:
     name: legal-doc-backend
     env: python
     buildCommand: ./build.sh
-    startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
+    startCommand: gunicorn core.wsgi:application -c gunicorn.conf.py
     envVars:
+      - key: PORT
+        value: "10000"
+      - key: WEB_CONCURRENCY
+        value: "4"
       - key: PYTHON_VERSION
         value: 3.12.0
       - key: POETRY_VERSION

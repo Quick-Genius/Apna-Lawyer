@@ -19,6 +19,16 @@ apt-get update && apt-get install -y \
 # Install project dependencies using Poetry
 poetry install --no-interaction --no-ansi
 
+# Collect static files
+poetry run python manage.py collectstatic --noinput
+
+# Run migrations
+poetry run python manage.py migrate
+
+# Create necessary directories
+mkdir -p /opt/render/project/src/run/
+mkdir -p /opt/render/project/src/logs/
+
 # Run Django commands
 poetry run python manage.py collectstatic --noinput
 poetry run python manage.py migrate
