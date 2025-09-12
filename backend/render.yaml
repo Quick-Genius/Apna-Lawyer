@@ -3,11 +3,17 @@ services:
     name: legal-doc-backend
     env: python
     buildCommand: ./build.sh
-    startCommand: poetry run python manage.py runserver 0.0.0.0:$PORT
+    startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
       - key: POETRY_VERSION
         value: 1.7.1
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SETTINGS_MODULE
+        value: core.settings
+      - key: FRONTEND_URL
+        value: "https://visionbros-frontend.onrender.com"  # Update this to your frontend URL
     healthCheckPath: /admin/
     autoDeploy: false
