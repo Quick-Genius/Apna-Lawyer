@@ -28,7 +28,3 @@ poetry run python manage.py migrate
 # Create necessary directories
 mkdir -p /opt/render/project/src/run/
 mkdir -p /opt/render/project/src/logs/
-
-# Run Django commands
-poetry run python manage.py collectstatic --noinput
-poetry run python manage.py migrate
