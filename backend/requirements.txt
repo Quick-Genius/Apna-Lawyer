@@ -6,6 +6,10 @@ setuptools>=69.0.3
 Django==4.2.9
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
+dj-database-url
+
+# WSGI server
+gunicorn
 
 # Image and PDF processing
 Pillow==10.2.0  # Latest version with better Python 3.13 support
