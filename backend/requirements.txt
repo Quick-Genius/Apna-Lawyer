@@ -11,6 +11,9 @@ dj-database-url
 # WSGI server
 gunicorn
 
+# Static files
+whitenoise
+
 # Image and PDF processing
 Pillow==10.2.0  # Latest version with better Python 3.13 support
 PyPDF2==3.0.1

@@ -2,29 +2,11 @@
 # exit on error
 set -o errexit
 
-# Install system dependencies for Pillow
-apt-get update && apt-get install -y \
-    python3-dev \
-    python3-pip \
-    python3-setuptools \
-    python3-wheel \
-    python3-cffi \
-    libcairo2 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
-    libffi-dev \
-    shared-mime-info
-
-# Install project dependencies using Poetry
-poetry install --no-interaction --no-ansi
+# Install project dependencies
+pip install -r requirements.txt
 
 # Collect static files
-poetry run python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput
 
 # Run migrations
-poetry run python manage.py migrate
-
-# Create necessary directories
-mkdir -p /opt/render/project/src/run/
-mkdir -p /opt/render/project/src/logs/
+python manage.py migrate
