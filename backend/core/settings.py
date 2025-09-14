@@ -156,9 +156,7 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# Ensure STATIC_ROOT directory exists
-import os
-os.makedirs(STATIC_ROOT, exist_ok=True)
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -203,7 +201,6 @@ CORS_ALLOW_CREDENTIALS = True
 # For production, you should use a service like AWS S3 for media storage.
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-load_dotenv()
 
 # OpenAI API Key
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
