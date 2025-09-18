@@ -1,28 +1,20 @@
 from django.db import models
+import uuid
 
-class LawyerRegistration(models.Model):
-    name = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=20)
-    license_number = models.CharField(max_length=100)
-    professional_info = models.TextField()
-    years_of_experience = models.PositiveIntegerField()
-    primary_practice_area = models.CharField(max_length=100)
-    specialization = models.CharField(max_length=100)
-    certification_document = models.FileField(upload_to='certifications/')```
+class Lawyer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.TextField(null=False)
+    email = models.TextField(unique=True, null=False)
+    phone_number = models.TextField(null=False)
+    license_number = models.TextField(unique=True, null=False)
+    professional_information = models.TextField(null=True, blank=True)
+    years_of_experience = models.IntegerField(null=True)
+    primary_practice_area = models.TextField(null=True, blank=True)
+    practice_location = models.TextField(null=True, blank=True)
+    working_court = models.TextField(null=True, blank=True)
+    specialization_document = models.TextField(null=True, blank=True)
+    education_document = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-#### **`lawyers/views.py`**
-
-```python
-from django.shortcuts import render, redirect
-from .forms import LawyerRegistrationForm
-
-def register_lawyer(request):
-    if request.method == 'POST':
-        form = LawyerRegistrationForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('login')
-    else:
-        form = LawyerRegistrationForm()
-    return render(request, 'lawyer_registration.html', {'form': form})
+    def __str__(self):
+        return f"{self.name} - {self.license_number}"

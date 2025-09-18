@@ -3,10 +3,16 @@ from django.db import models
 import uuid
 
 class User(AbstractUser):
-    name = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
-    lawyer_or_not = models.BooleanField(default=False)
-    unique_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.TextField(null=False)
+    email = models.TextField(unique=True, null=False)
+    password = models.TextField(null=False)
+    residence = models.TextField(null=True, blank=True)
+    is_lawyer = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ['name']
+
+    def __str__(self):
+        return f"{self.name} - {self.email}"

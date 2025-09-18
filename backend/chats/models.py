@@ -1,9 +1,17 @@
 from django.db import models
-from users.models import User
+import uuid
 
 class UserChat(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    user_message = models.TextField()
-    bot_response = models.TextField()
-    document = models.FileField(upload_to='documents/', blank=True, null=True)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    user_text_input = models.TextField(null=True, blank=True)
+    ai_text_output = models.TextField(null=True, blank=True)
+    user_document_submission = models.TextField(null=True, blank=True)
+    chatbot_document = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Chat {self.id} - User: {self.user.name}"
+
+    class Meta:
+        ordering = ['-created_at']
