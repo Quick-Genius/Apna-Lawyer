@@ -1,6 +1,6 @@
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
-import exampleImage from 'figma:asset/50e4234ba32f3a17fa4abf21568d7e5aef2fe1a0.png';
+import exampleImage from '../assets/78ee38db44766290dfe8abd673268b14928c5d43.png';
 
 interface AvatarSelectionPageProps {
   onSelectAvatar: (avatar: string) => void;

@@ -1,23 +1,6 @@
-# Build dependencies - must be first
-wheel>=0.42.0
-setuptools>=69.0.3
-
-# Core Django packages
-Django==4.2.9
+Django==4.2.5
 djangorestframework==3.14.0
-django-cors-headers==4.3.1
-
-# Image and PDF processing
-Pillow==10.2.0  # Latest version with better Python 3.13 support
-PyPDF2==3.0.1
-pytesseract==0.3.10
-
-# LangChain and Google AI
-langchain==0.0.350
-langchain-community==0.0.10
-langchain-google-genai==0.0.5
-google-generativeai==0.3.1
-
-# Utilities
-python-dotenv==1.0.0
+google-api-python-client==2.92.0
+google-auth-httplib2==0.1.0
+google-auth-oauthlib==0.8.0
 requests==2.31.0

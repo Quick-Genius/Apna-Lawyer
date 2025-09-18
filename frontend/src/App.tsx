@@ -4,30 +4,43 @@ import ComprehensiveHomePage from "./components/ComprehensiveHomePage";
 import AIChatPage from "./components/AIChatPage";
 import LawyersPage from "./components/LawyersPage";
 import CommunityPage from "./components/CommunityPage";
+import LawyerChatPage from "./components/LawyerChatPage";
+import LawyerBookingPage from "./components/LawyerBookingPage";
 import WelcomePopup from "./components/WelcomePopup";
 import LoginSignupPage from "./components/LoginSignupPage";
 import LawyerRegistrationPage from "./components/LawyerRegistrationPage";
+import LawyerDashboard from "./components/LawyerDashboard";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState("welcome");
+  const [currentPage, setCurrentPage] = useState("home");
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
+  const [userType, setUserType] = useState<'user' | 'lawyer'>('user');
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [selectedLawyer, setSelectedLawyer] = useState<{
+    name: string;
+    image?: string;
+    specialization?: string;
+    responseTime?: string;
+  } | null>(null);
 
   // Check if user has visited before
   useEffect(() => {
-    const hasVisited = localStorage.getItem('apna-lawyer-visited');
     const savedUser = localStorage.getItem('apna-lawyer-user');
     
     if (savedUser) {
       const userData = JSON.parse(savedUser);
       setIsLoggedIn(true);
       setUserName(userData.name);
-      setCurrentPage("home");
-    } else if (!hasVisited) {
-      setShowWelcomePopup(true);
+      setUserType(userData.type || 'user');
+      // Route to dashboard if lawyer, home if user
+      if (userData.type === 'lawyer') {
+        setCurrentPage("dashboard");
+      } else {
+        setCurrentPage("home");
+      }
     } else {
       setCurrentPage("home");
     }
@@ -69,7 +82,8 @@ export default function App() {
     localStorage.setItem('apna-lawyer-user', JSON.stringify(userData));
     setIsLoggedIn(true);
     setUserName(userData.name);
-    setCurrentPage("home");
+    setUserType("lawyer");
+    setCurrentPage("dashboard");
   };
 
   const handleSignUp = () => {
@@ -99,8 +113,31 @@ export default function App() {
   };
 
   const handleGetStarted = () => {
+    setShowWelcomePopup(true);
+    setCurrentPage("welcome");
+  };
+
+  // Navigation handlers for evaluator flow
+  const handleNavigateToSignIn = () => {
+    setAuthMode('signin');
+    setCurrentPage("login");
+  };
+
+  const handleNavigateToSignUp = () => {
     setAuthMode('signup');
     setCurrentPage("login");
+  };
+
+  const handleNavigateToLawyerRegistration = () => {
+    setCurrentPage("lawyer-registration");
+  };
+
+  const handleNavigateToDashboard = () => {
+    setCurrentPage("dashboard");
+  };
+
+  const handleNavigateToHome = () => {
+    setCurrentPage("home");
   };
 
   const renderPage = () => {
@@ -119,6 +156,10 @@ export default function App() {
             onLawyerRegistration={handleLawyerRegistration}
             onUserHome={handleUserHome}
             mode={authMode}
+            onNavigateToSignIn={handleNavigateToSignIn}
+            onNavigateToSignUp={handleNavigateToSignUp}
+            onNavigateToLawyerRegistration={handleNavigateToLawyerRegistration}
+            onNavigateToHome={handleNavigateToHome}
           />
         );
       case "lawyer-registration":
@@ -126,6 +167,21 @@ export default function App() {
           <LawyerRegistrationPage
             onBack={() => setCurrentPage("login")}
             onRegistrationComplete={handleRegistrationComplete}
+            onNavigateToSignIn={handleNavigateToSignIn}
+            onNavigateToSignUp={handleNavigateToSignUp}
+            onNavigateToDashboard={handleNavigateToDashboard}
+            onNavigateToHome={handleNavigateToHome}
+          />
+        );
+      case "dashboard":
+        return (
+          <LawyerDashboard 
+            userName={userName}
+            onLogout={handleLogout}
+            onNavigateToSignIn={handleNavigateToSignIn}
+            onNavigateToSignUp={handleNavigateToSignUp}
+            onNavigateToLawyerRegistration={handleNavigateToLawyerRegistration}
+            onNavigateToHome={handleNavigateToHome}
           />
         );
       case "home":
@@ -139,9 +195,39 @@ export default function App() {
       case "chat":
         return <AIChatPage selectedAvatar={selectedAvatar || "mike"} />;
       case "lawyers":
-        return <LawyersPage />;
+        return (
+          <LawyersPage 
+            onLawyerChat={(lawyer) => {
+              setSelectedLawyer(lawyer);
+              setCurrentPage("lawyer-chat");
+            }}
+            onLawyerBooking={(lawyer) => {
+              setSelectedLawyer(lawyer);
+              setCurrentPage("lawyer-booking");
+            }}
+          />
+        );
       case "community":
         return <CommunityPage />;
+      case "lawyer-chat":
+        return (
+          <LawyerChatPage 
+            lawyerName={selectedLawyer?.name || "Legal Expert"}
+            lawyerImage={selectedLawyer?.image}
+            lawyerSpecialization={selectedLawyer?.specialization}
+            onBack={() => setCurrentPage("lawyers")}
+          />
+        );
+      case "lawyer-booking":
+        return (
+          <LawyerBookingPage 
+            lawyerName={selectedLawyer?.name || "Legal Expert"}
+            lawyerImage={selectedLawyer?.image}
+            lawyerSpecialization={selectedLawyer?.specialization}
+            responseTime={selectedLawyer?.responseTime}
+            onBack={() => setCurrentPage("lawyers")}
+          />
+        );
       default:
         return (
           <ComprehensiveHomePage 
@@ -153,7 +239,7 @@ export default function App() {
     }
   };
 
-  const showNavigation = currentPage !== "welcome" && currentPage !== "login" && currentPage !== "lawyer-registration" && currentPage !== "home";
+  const showNavigation = currentPage !== "welcome" && currentPage !== "login" && currentPage !== "lawyer-registration" && currentPage !== "home" && currentPage !== "dashboard" && currentPage !== "lawyer-chat" && currentPage !== "lawyer-booking";
 
   return (
     <div className="min-h-screen bg-[#FCFCFC]">

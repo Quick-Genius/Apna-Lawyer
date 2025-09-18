@@ -5,14 +5,18 @@ import { Label } from "./ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
-import { ArrowLeft, Upload, CheckCircle } from "lucide-react";
+import { ArrowLeft, Upload, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface LawyerRegistrationPageProps {
   onBack: () => void;
   onRegistrationComplete: () => void;
+  onNavigateToSignIn?: () => void;
+  onNavigateToSignUp?: () => void;
+  onNavigateToDashboard?: () => void;
+  onNavigateToHome?: () => void;
 }
 
-export default function LawyerRegistrationPage({ onBack, onRegistrationComplete }: LawyerRegistrationPageProps) {
+export default function LawyerRegistrationPage({ onBack, onRegistrationComplete, onNavigateToSignIn, onNavigateToSignUp, onNavigateToDashboard, onNavigateToHome }: LawyerRegistrationPageProps) {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -285,6 +289,29 @@ export default function LawyerRegistrationPage({ onBack, onRegistrationComplete 
         <div className="text-center text-sm text-[#6B7280]">
           <p>Join the trusted network of legal professionals</p>
         </div>
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg border border-gray-200">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onNavigateToSignUp}
+          className="flex items-center gap-2 text-[#36454F] border-gray-300 hover:bg-gray-50"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Sign Up
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onNavigateToDashboard}
+          className="flex items-center gap-2 text-[#36454F] border-gray-300 hover:bg-gray-50"
+        >
+          Dashboard
+          <ChevronRight className="w-4 h-4" />
+        </Button>
       </div>
     </div>
   );

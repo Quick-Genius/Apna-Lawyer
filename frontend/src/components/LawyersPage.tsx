@@ -5,7 +5,6 @@ import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import Footer from "./Footer";
-import ChatBox from "./ChatBox";
 import { 
   Search, 
   MapPin, 
@@ -23,12 +22,28 @@ import {
   TrendingUp
 } from "lucide-react";
 
-export default function LawyersPage() {
+interface LawyersPageProps {
+  onLawyerChat?: (lawyer: {
+    name: string;
+    image?: string;
+    specialization?: string;
+    responseTime?: string;
+  }) => void;
+  onLawyerBooking?: (lawyer: {
+    name: string;
+    image?: string;
+    specialization?: string;
+    responseTime?: string;
+  }) => void;
+}
+
+export default function LawyersPage({ onLawyerChat, onLawyerBooking }: LawyersPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedArea, setSelectedArea] = useState("all");
   const [selectedPricing, setSelectedPricing] = useState("all");
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isConsultationOpen, setIsConsultationOpen] = useState(false);
   const [selectedLawyer, setSelectedLawyer] = useState<string>("");
 
   const lawyers = [
@@ -134,9 +149,26 @@ export default function LawyersPage() {
   const areas = ["all", "Corporate", "Family", "Criminal", "Property", "Intellectual Property", "Employment"];
   const pricingOptions = ["all", "Free Consultation", "Paid"];
 
-  const handleContactLawyer = (lawyerName: string) => {
-    setSelectedLawyer(lawyerName);
-    setIsChatOpen(true);
+  const handleContactLawyer = (lawyer: any) => {
+    if (onLawyerChat) {
+      onLawyerChat({
+        name: lawyer.name,
+        image: lawyer.image,
+        specialization: lawyer.specialization,
+        responseTime: lawyer.responseTime
+      });
+    }
+  };
+
+  const handleBookLawyer = (lawyer: any) => {
+    if (onLawyerBooking) {
+      onLawyerBooking({
+        name: lawyer.name,
+        image: lawyer.image,
+        specialization: lawyer.specialization,
+        responseTime: lawyer.responseTime
+      });
+    }
   };
 
   return (
@@ -382,7 +414,7 @@ export default function LawyersPage() {
                     <div className="flex gap-3">
                       <Button 
                         size="sm" 
-                        onClick={() => handleContactLawyer(lawyer.name)}
+                        onClick={() => handleContactLawyer(lawyer)}
                         className="flex-1 bg-[#77DDE7] hover:bg-[#77DDE7]/80 rounded-xl text-[#36454F] shadow-sm"
                         style={{ backgroundColor: '#77DDE7', color: '#36454F' }}
                       >
@@ -391,6 +423,7 @@ export default function LawyersPage() {
                       </Button>
                       <Button 
                         size="sm" 
+                        onClick={() => handleBookLawyer(lawyer)}
                         variant="outline" 
                         className="flex-1 border-[#AEC6CF] text-[#36454F] hover:bg-[#AEC6CF]/10 rounded-xl"
                       >
@@ -415,13 +448,6 @@ export default function LawyersPage() {
 
       {/* Footer */}
       <Footer />
-
-      {/* Chat Box */}
-      <ChatBox 
-        isOpen={isChatOpen} 
-        onClose={() => setIsChatOpen(false)} 
-        lawyerName={selectedLawyer}
-      />
     </div>
   );
 }
