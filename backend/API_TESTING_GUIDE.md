@@ -240,3 +240,106 @@ If you encounter issues:
 2. Verify all dependencies are installed
 3. Ensure database is properly configured
 4. Check API endpoint URLs match your URL patterns
+## 
+NEW ENDPOINTS (Added for File Processing)
+
+### OCR Image API
+**POST** `/api/ocr-image/`
+
+Extract text from uploaded image files.
+
+**Request:** Multipart form data
+- `image`: Image file (PNG, JPG, etc.)
+
+**Response:**
+```json
+{
+    "extracted_text": "Text extracted from image",
+    "success": true
+}
+```
+
+**Testing with curl:**
+```bash
+curl -X POST http://localhost:8000/api/ocr-image/ \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "image=@/path/to/your/image.jpg"
+```
+
+### Extract Document API
+**POST** `/api/extract-doc/`
+
+Extract text from uploaded PDF/DOC files.
+
+**Request:** Multipart form data
+- `file`: Document file (PDF, DOC, DOCX)
+
+**Response:**
+```json
+{
+    "extracted_text": "Text extracted from document",
+    "success": true
+}
+```
+
+**Testing with curl:**
+```bash
+curl -X POST http://localhost:8000/api/extract-doc/ \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@/path/to/your/document.pdf"
+```
+
+## Frontend Integration Updates
+
+The frontend now includes:
+
+1. **Attach Image Button**: Uploads images and extracts text using OCR
+2. **Upload File Button**: Uploads PDF/DOC files and extracts text
+3. **Text Preview**: Shows extracted text in chat before sending to AI
+
+### Frontend API Calls:
+```typescript
+// OCR Image
+const ocrResponse = await apiService.ocrImage(imageFile);
+
+// Extract Document Text
+const docResponse = await apiService.extractTextFromDocument(documentFile);
+```
+
+## New Dependencies
+
+Added to requirements.txt:
+- `PyPDF2==3.0.1` - For PDF text extraction
+- `python-docx==0.8.11` - For DOC/DOCX text extraction
+
+Install with:
+```bash
+pip install PyPDF2==3.0.1 python-docx==0.8.11
+```
+
+## File Upload Testing
+
+### Test Image OCR:
+1. Prepare a test image with text
+2. Use the frontend "Attach Image" button or curl command
+3. Verify extracted text appears in chat
+
+### Test Document Extraction:
+1. Prepare a test PDF or DOC file
+2. Use the frontend "Upload File" button or curl command
+3. Verify extracted text appears in chat input
+
+## Error Handling
+
+New error responses:
+- `400`: Invalid file type
+- `400`: No file provided
+- `500`: PDF/DOC processing library not installed
+- `500`: Text extraction failed
+
+## Production Deployment Notes
+
+1. Ensure PyPDF2 and python-docx are installed on production server
+2. Configure file upload limits in web server (nginx/apache)
+3. Set appropriate CORS headers for file uploads
+4. Monitor file upload storage and cleanup

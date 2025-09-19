@@ -49,13 +49,9 @@ export default function App() {
   const handleRoleSelect = (role: 'lawyer' | 'user') => {
     localStorage.setItem('apna-lawyer-visited', 'true');
     setShowWelcomePopup(false);
-    
-    if (role === 'lawyer') {
-      setAuthMode('signin');
-      setCurrentPage("login");
-    } else {
-      setCurrentPage("home");
-    }
+    setUserType(role);
+    setAuthMode('signin');
+    setCurrentPage("login");
   };
 
   const handleBackToWelcome = () => {
