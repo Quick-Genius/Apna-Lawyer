@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .models import Lawyer
 from .serializers import LawyerSerializer
-from apna_lawyer.supabase_client import supabase
+from db.supabase_client import supabase
 import requests
 import os
 from dotenv import load_dotenv

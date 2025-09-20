@@ -2,6 +2,7 @@ import { Button } from "./ui/button";
 import { Scale, Users, FileText, Bot, Home, User, LogOut, Settings } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "./ui/avatar";
+import { useAuth } from "../hooks/useAuth";
 
 interface NavigationProps {
   currentPage: string;
@@ -22,6 +23,18 @@ export default function Navigation({
   onSignIn,
   onLogout 
 }: NavigationProps) {
+  const { user, signOut } = useAuth();
+  
+  // Use auth hook data if available, otherwise fall back to props
+  const actualIsLoggedIn = user ? true : isLoggedIn;
+  const actualUserName = user ? user.name : userName;
+
+  const handleLogout = async () => {
+    await signOut();
+    if (onLogout) {
+      onLogout();
+    }
+  };
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'chat', label: 'Chat', icon: Bot },
@@ -72,52 +85,46 @@ export default function Navigation({
 
           {/* User Area */}
           <div className="flex items-center gap-3">
-            {isLoggedIn ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-10 w-10 rounded-full p-0">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-[#D4AF37] text-white">
-                        {getUserInitial(userName)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem className="cursor-pointer">
-                    <User className="w-4 h-4 mr-2" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </DropdownMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-10 w-10 rounded-full p-0">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-[#D4AF37] text-white">
+                      {actualIsLoggedIn ? getUserInitial(actualUserName) : "G"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {actualIsLoggedIn ? (
+                  <>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <User className="w-4 h-4 mr-2" />
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="cursor-pointer text-red-600"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </>
+                ) : (
                   <DropdownMenuItem 
-                    className="cursor-pointer text-red-600"
-                    onClick={onLogout}
+                    className="cursor-pointer"
+                    onClick={onSignIn}
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
+                    <User className="w-4 h-4 mr-2" />
+                    Sign In
                   </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                <Button 
-                  onClick={onSignIn}
-                  variant="outline"
-                  className="border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 px-6 py-2 rounded-lg"
-                >
-                  Sign In
-                </Button>
-                <Button 
-                  onClick={onSignUp}
-                  className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-white px-6 py-2 rounded-lg"
-                >
-                  Sign Up
-                </Button>
-              </>
-            )}
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

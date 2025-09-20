@@ -7,6 +7,7 @@ from rest_framework import status
 from .models import UserChat
 from .ai_service import get_ai_service
 from .ocr_service import ocr_service
+from .image_chat_service import image_chat_service
 import requests
 import json
 
@@ -22,21 +23,21 @@ class ChatbotAPI(APIView):
             image_data = request.data.get('image')  # Base64 encoded image
             system_prompt = request.data.get('system_prompt')  # Optional custom system prompt
             
-            # Validate input
-            if not user_message and not image_data:
-                return Response({'error': 'Message or image is required'}, 
+            # Validate input - require a message (image is optional)
+            if not user_message:
+                return Response({'error': 'Message is required'}, 
                               status=status.HTTP_400_BAD_REQUEST)
             
             extracted_text = None
             
-            # Process image if provided
-            if image_data:
+            # Only process image if user sends a message WITH an image (like ChatGPT/Claude)
+            if image_data and user_message:
                 try:
                     extracted_text = ocr_service.extract_text_from_base64(image_data)
                     
-                    # If no user message, use extracted text as the message
-                    if not user_message:
-                        user_message = f"Please analyze this document: {extracted_text}"
+                    # Enhance the user message with extracted text context
+                    if extracted_text.strip():
+                        user_message = f"{user_message}\n\n[Image contains text: {extracted_text}]"
                     
                 except Exception as e:
                     return Response({'error': f'Image processing failed: {str(e)}'}, 
@@ -70,6 +71,9 @@ class ChatbotAPI(APIView):
             # Include extracted text in response if image was processed
             if extracted_text:
                 response_data['extracted_text'] = extracted_text
+                response_data['has_image'] = True
+            else:
+                response_data['has_image'] = False
             
             return Response(response_data, status=status.HTTP_200_OK)
             
@@ -255,6 +259,99 @@ def extract_document_api(request):
             'extracted_text': extracted_text.strip(),
             'success': True
         }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def upload_chat_image(request):
+    """
+    Upload image for chat without running OCR
+    """
+    try:
+        if 'image' not in request.FILES:
+            return Response({'error': 'Image file is required'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        image_file = request.FILES['image']
+        
+        # Validate file type
+        if not image_file.content_type.startswith('image/'):
+            return Response({'error': 'File must be an image'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get user session ID
+        user_session_id = image_chat_service.get_user_session_id(request)
+        
+        # Store image without OCR
+        result = image_chat_service.store_image(image_file, user_session_id)
+        
+        if result['success']:
+            return Response(result, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': result['error']}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def process_chat_with_images(request):
+    """
+    Process chat message with potential OCR requests
+    """
+    try:
+        message = request.data.get('message', '')
+        
+        if not message:
+            return Response({'error': 'Message is required'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get user session ID
+        user_session_id = image_chat_service.get_user_session_id(request)
+        
+        # Process message for OCR requests
+        result = image_chat_service.process_chat_message(message, user_session_id)
+        
+        # If it's an OCR request, return the extracted text
+        if result['type'] == 'ocr_result':
+            return Response({
+                'response': result['message'],
+                'extracted_text': result['extracted_text'],
+                'image_name': result['image_name'],
+                'type': 'ocr_result'
+            }, status=status.HTTP_200_OK)
+        
+        # If it's an image list request
+        elif result['type'] == 'image_list':
+            return Response({
+                'response': result['message'],
+                'images': result['images'],
+                'type': 'image_list'
+            }, status=status.HTTP_200_OK)
+        
+        # For regular chat messages, use AI service
+        else:
+            ai_service = get_ai_service()
+            bot_response = ai_service.generate_legal_response(user_message=message)
+            
+            # Save chat if user is authenticated
+            chat_id = None
+            if request.user.is_authenticated:
+                chat = UserChat.objects.create(
+                    user=request.user,
+                    user_text_input=message,
+                    ai_text_output=bot_response
+                )
+                chat_id = str(chat.id)
+            
+            return Response({
+                'response': bot_response,
+                'chat_id': chat_id,
+                'type': 'chat'
+            }, status=status.HTTP_200_OK)
         
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

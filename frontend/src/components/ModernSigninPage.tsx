@@ -3,7 +3,9 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent } from "./ui/card";
-import { ArrowLeft, Eye, EyeOff, Shield, MessageSquare, Scale, Check } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Shield, MessageSquare, Scale, Check, Loader2 } from "lucide-react";
+import { authService, AuthError } from "../services/auth";
+import { useAuth } from "../hooks/useAuth";
 
 interface ModernSigninPageProps {
   onBack: () => void;
@@ -11,12 +13,15 @@ interface ModernSigninPageProps {
   onSwitchToSignup: () => void;
 }
 
-export default function ModernSigninPage({ 
-  onBack, 
+export default function ModernSigninPage({
+  onBack,
   onUserHome,
-  onSwitchToSignup 
+  onSwitchToSignup
 }: ModernSigninPageProps) {
+  const { refreshUser } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -32,7 +37,7 @@ export default function ModernSigninPage({
 
   const handlePasswordChange = (password: string) => {
     setFormData(prev => ({ ...prev, password }));
-    
+
     setPasswordRequirements({
       length: password.length >= 8,
       uppercase: /[A-Z]/.test(password),
@@ -42,9 +47,28 @@ export default function ModernSigninPage({
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onUserHome();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await authService.login({
+        email: formData.email,
+        password: formData.password
+      });
+
+      // Refresh auth state
+      refreshUser();
+
+      // Navigate based on user type
+      onUserHome();
+    } catch (err) {
+      const authError = err as AuthError;
+      setError(authService.formatError(authError));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,9 +100,9 @@ export default function ModernSigninPage({
           {/* Header */}
           <div className="text-center space-y-2">
             <p className="text-sm text-[#6B7280]">
-              Not a member yet? 
-              <Button 
-                variant="link" 
+              Not a member yet?
+              <Button
+                variant="link"
                 onClick={onSwitchToSignup}
                 className="text-[#D4AF37] hover:text-[#D4AF37]/80 p-1 ml-1"
               >
@@ -94,6 +118,12 @@ export default function ModernSigninPage({
           {/* Form */}
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardContent className="p-8">
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -130,7 +160,7 @@ export default function ModernSigninPage({
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
-                  
+
                   {/* Password Requirements */}
                   {formData.password && (
                     <div className="mt-3 p-3 bg-[#F5E6CC]/20 rounded-lg border border-[#D4AF37]/20">
@@ -138,23 +168,23 @@ export default function ModernSigninPage({
                       <div className="grid grid-cols-1 gap-1 text-xs">
                         <div className={`flex items-center gap-2 ${passwordRequirements.length ? 'text-green-600' : 'text-[#6B7280]'}`}>
                           <Check className={`h-3 w-3 ${passwordRequirements.length ? 'opacity-100' : 'opacity-30'}`} />
-                          At least 8 characters
+                          At least 8 characters.
                         </div>
                         <div className={`flex items-center gap-2 ${passwordRequirements.uppercase ? 'text-green-600' : 'text-[#6B7280]'}`}>
                           <Check className={`h-3 w-3 ${passwordRequirements.uppercase ? 'opacity-100' : 'opacity-30'}`} />
-                          One uppercase letter
+                          One uppercase letter.
                         </div>
                         <div className={`flex items-center gap-2 ${passwordRequirements.lowercase ? 'text-green-600' : 'text-[#6B7280]'}`}>
                           <Check className={`h-3 w-3 ${passwordRequirements.lowercase ? 'opacity-100' : 'opacity-30'}`} />
-                          One lowercase letter
+                          One lowercase letter.
                         </div>
                         <div className={`flex items-center gap-2 ${passwordRequirements.number ? 'text-green-600' : 'text-[#6B7280]'}`}>
                           <Check className={`h-3 w-3 ${passwordRequirements.number ? 'opacity-100' : 'opacity-30'}`} />
-                          One number
+                          One number.
                         </div>
                         <div className={`flex items-center gap-2 ${passwordRequirements.special ? 'text-green-600' : 'text-[#6B7280]'}`}>
                           <Check className={`h-3 w-3 ${passwordRequirements.special ? 'opacity-100' : 'opacity-30'}`} />
-                          One special character
+                          One special character.
                         </div>
                       </div>
                     </div>
@@ -163,9 +193,17 @@ export default function ModernSigninPage({
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-white rounded-lg"
+                  disabled={loading}
+                  className="w-full h-12 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-white rounded-lg disabled:opacity-50"
                 >
-                  Sign In
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Signing In...
+                    </>
+                  ) : (
+                    'Sign In'
+                  )}
                 </Button>
 
                 <div className="relative">
@@ -184,12 +222,12 @@ export default function ModernSigninPage({
                     className="h-12 border-[#AEC6CF]/30 hover:bg-[#AEC6CF]/10"
                   >
                     <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                      <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
-                    Google
+                    Google.
                   </Button>
                   <Button
                     type="button"
@@ -197,9 +235,9 @@ export default function ModernSigninPage({
                     className="h-12 border-[#AEC6CF]/30 hover:bg-[#AEC6CF]/10"
                   >
                     <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                     </svg>
-                    Facebook
+                    Facebook.
                   </Button>
                 </div>
               </form>
@@ -219,7 +257,7 @@ export default function ModernSigninPage({
               <h3 className="text-sm text-[#36454F] mb-2">Secure Access</h3>
               <p className="text-xs text-[#6B7280]">Your account is protected with enterprise-grade security</p>
             </Card>
-            
+
             <Card className="p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
               <div className="w-12 h-12 bg-gradient-to-br from-[#D4AF37] to-[#F5E6CC] rounded-xl flex items-center justify-center mx-auto mb-4">
                 <MessageSquare className="w-6 h-6 text-white" />
@@ -227,7 +265,7 @@ export default function ModernSigninPage({
               <h3 className="text-sm text-[#36454F] mb-2">Quick Support</h3>
               <p className="text-xs text-[#6B7280]">Get instant help from legal experts</p>
             </Card>
-            
+
             <Card className="p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg col-span-2">
               <div className="w-12 h-12 bg-gradient-to-br from-[#D4AF37] to-[#F5E6CC] rounded-xl flex items-center justify-center mx-auto mb-4">
                 <Scale className="w-6 h-6 text-white" />
@@ -236,7 +274,7 @@ export default function ModernSigninPage({
               <p className="text-xs text-[#6B7280]">Understand complex legal documents with AI-powered assistance</p>
             </Card>
           </div>
-          
+
           <div className="text-center">
             <h2 className="text-2xl text-[#36454F] mb-4">Welcome back</h2>
             <p className="text-[#6B7280]">

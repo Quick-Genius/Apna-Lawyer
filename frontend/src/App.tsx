@@ -10,14 +10,13 @@ import WelcomePopup from "./components/WelcomePopup";
 import LoginSignupPage from "./components/LoginSignupPage";
 import LawyerRegistrationPage from "./components/LawyerRegistrationPage";
 import LawyerDashboard from "./components/LawyerDashboard";
+import { useAuth } from "./hooks/useAuth";
 
 export default function App() {
+  const { isSignedIn, user, loading } = useAuth();
   const [currentPage, setCurrentPage] = useState("home");
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState("");
-  const [userType, setUserType] = useState<'user' | 'lawyer'>('user');
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [selectedLawyer, setSelectedLawyer] = useState<{
     name: string;
@@ -26,30 +25,25 @@ export default function App() {
     responseTime?: string;
   } | null>(null);
 
-  // Check if user has visited before
+  // Check authentication status and route accordingly
   useEffect(() => {
-    const savedUser = localStorage.getItem('apna-lawyer-user');
-    
-    if (savedUser) {
-      const userData = JSON.parse(savedUser);
-      setIsLoggedIn(true);
-      setUserName(userData.name);
-      setUserType(userData.type || 'user');
-      // Route to dashboard if lawyer, home if user
-      if (userData.type === 'lawyer') {
-        setCurrentPage("dashboard");
+    if (!loading) {
+      if (isSignedIn && user) {
+        // Route to dashboard if lawyer, home if user
+        if (user.is_lawyer) {
+          setCurrentPage("dashboard");
+        } else {
+          setCurrentPage("home");
+        }
       } else {
         setCurrentPage("home");
       }
-    } else {
-      setCurrentPage("home");
     }
-  }, []);
+  }, [isSignedIn, user, loading]);
 
   const handleRoleSelect = (role: 'lawyer' | 'user') => {
     localStorage.setItem('apna-lawyer-visited', 'true');
     setShowWelcomePopup(false);
-    setUserType(role);
     setAuthMode('signin');
     setCurrentPage("login");
   };
@@ -64,21 +58,12 @@ export default function App() {
   };
 
   const handleUserHome = () => {
-    // Simulate login with dummy data
-    const userData = { name: "User", email: "user@example.com" };
-    localStorage.setItem('apna-lawyer-user', JSON.stringify(userData));
-    setIsLoggedIn(true);
-    setUserName(userData.name);
+    // Navigate to home page (user is already authenticated via auth service)
     setCurrentPage("home");
   };
 
   const handleRegistrationComplete = () => {
-    // Simulate lawyer registration completion
-    const userData = { name: "Dr. Smith", email: "lawyer@example.com", type: "lawyer" };
-    localStorage.setItem('apna-lawyer-user', JSON.stringify(userData));
-    setIsLoggedIn(true);
-    setUserName(userData.name);
-    setUserType("lawyer");
+    // Navigate to dashboard (user is already authenticated via auth service)
     setCurrentPage("dashboard");
   };
 
@@ -93,9 +78,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('apna-lawyer-user');
-    setIsLoggedIn(false);
-    setUserName("");
+    // Logout is handled by the useAuth hook
     setCurrentPage("home");
   };
 
@@ -172,7 +155,7 @@ export default function App() {
       case "dashboard":
         return (
           <LawyerDashboard 
-            userName={userName}
+            userName={user?.name || ""}
             onLogout={handleLogout}
             onNavigateToSignIn={handleNavigateToSignIn}
             onNavigateToSignUp={handleNavigateToSignUp}
@@ -235,7 +218,19 @@ export default function App() {
     }
   };
 
-  const showNavigation = currentPage !== "welcome" && currentPage !== "login" && currentPage !== "lawyer-registration" && currentPage !== "home" && currentPage !== "dashboard" && currentPage !== "lawyer-chat" && currentPage !== "lawyer-booking";
+  const showNavigation = currentPage === "chat" || currentPage === "lawyers" || currentPage === "community";
+
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FCFCFC] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#36454F]">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FCFCFC]">
@@ -243,8 +238,8 @@ export default function App() {
         <Navigation 
           currentPage={currentPage} 
           onPageChange={setCurrentPage}
-          isLoggedIn={isLoggedIn}
-          userName={userName}
+          isLoggedIn={isSignedIn}
+          userName={user?.name || ""}
           onSignUp={handleSignUp}
           onSignIn={handleSignIn}
           onLogout={handleLogout}

@@ -11,7 +11,7 @@ from io import BytesIO
 from PIL import Image
 
 # Add the backend directory to Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'apna_lawyer.settings')

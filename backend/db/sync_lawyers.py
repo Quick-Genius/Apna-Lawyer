@@ -14,7 +14,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'apna_lawyer.settings')
 django.setup()
 
 from lawyers.models import Lawyer
-from apna_lawyer.supabase_client import supabase
+from db.supabase_client import supabase
 
 def sync_lawyer_to_supabase(lawyer_data):
     """Sync a single lawyer to Supabase"""

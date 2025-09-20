@@ -4,7 +4,9 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent } from "./ui/card";
 import { Checkbox } from "./ui/checkbox";
-import { ArrowLeft, Eye, EyeOff, Shield, MessageSquare, Scale, Check } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Shield, MessageSquare, Scale, Check, Loader2 } from "lucide-react";
+import { authService, AuthError } from "../services/auth";
+import { useAuth } from "../hooks/useAuth";
 
 interface ModernSignupPageProps {
   onBack: () => void;
@@ -19,9 +21,12 @@ export default function ModernSignupPage({
   onUserHome,
   onSwitchToLogin 
 }: ModernSignupPageProps) {
+  const { refreshUser } = useAuth();
   const [registerAsLawyer, setRegisterAsLawyer] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -49,13 +54,48 @@ export default function ModernSignupPage({
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (registerAsLawyer) {
-      onLawyerRegistration();
-    } else {
-      onUserHome();
+    setError('');
+
+    // Validate password confirmation
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    // Check password requirements
+    const allRequirementsMet = Object.values(passwordRequirements).every(req => req);
+    if (!allRequirementsMet) {
+      setError('Please ensure your password meets all requirements');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await authService.signup({
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        password_confirm: formData.confirmPassword,
+        is_lawyer: registerAsLawyer
+      });
+
+      // Refresh auth state
+      refreshUser();
+
+      // Navigate based on user type
+      if (registerAsLawyer) {
+        onLawyerRegistration();
+      } else {
+        onUserHome();
+      }
+    } catch (err) {
+      const authError = err as AuthError;
+      setError(authService.formatError(authError));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,6 +146,12 @@ export default function ModernSignupPage({
           {/* Form */}
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardContent className="p-8">
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+              
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
@@ -228,9 +274,17 @@ export default function ModernSignupPage({
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-white rounded-lg"
+                  disabled={loading}
+                  className="w-full h-12 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-white rounded-lg disabled:opacity-50"
                 >
-                  Sign Up
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    'Sign Up'
+                  )}
                 </Button>
 
                 <div className="relative">

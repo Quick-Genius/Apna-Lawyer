@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'apna_lawyer.settings')
 django.setup()
 
-from apna_lawyer.supabase_client import supabase
+from db.supabase_client import supabase
 
 def test_connection():
     """Test basic Supabase connection"""

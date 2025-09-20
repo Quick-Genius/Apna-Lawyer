@@ -1,0 +1,57 @@
+{
+  "conversation_id": "34738776-1ccc-4bb7-9a9a-d1f9e6f8355c",
+  "user_id": "d7e0d9b4-e294-46f7-862e-8f6387d50983",
+  "topic": "Legal Consultation",
+  "message_count": 6,
+  "messages": [
+    {
+      "id": "92f52ab2-73ea-4d7e-9149-248ba33a6c28",
+      "conversation_id": "34738776-1ccc-4bb7-9a9a-d1f9e6f8355c",
+      "user_id": "d7e0d9b4-e294-46f7-862e-8f6387d50983",
+      "message": "My employer terminated me without proper notice. Is this legal?",
+      "sender": "user",
+      "timestamp": "2025-09-13T07:24:40.231228"
+    },
+    {
+      "id": "a97672c3-94e2-4ac2-805d-44a2a56b86fc",
+      "conversation_id": "34738776-1ccc-4bb7-9a9a-d1f9e6f8355c",
+      "user_id": "d7e0d9b4-e294-46f7-862e-8f6387d50983",
+      "message": "Wrongful termination is a serious issue. In India, the Industrial Disputes Act and other labor laws protect employees. Can you tell me more about your employment terms? Were you a permanent employee, and did you receive any termination notice?",
+      "sender": "ai",
+      "timestamp": "2025-09-13T07:25:40.231228"
+    },
+    {
+      "id": "91d3fc0c-0ef9-4fcc-af6d-b03ac4038f4a",
+      "conversation_id": "34738776-1ccc-4bb7-9a9a-d1f9e6f8355c",
+      "user_id": "d7e0d9b4-e294-46f7-862e-8f6387d50983",
+      "message": "I was a permanent employee for 3 years. They just asked me to leave immediately without any notice.",
+      "sender": "user",
+      "timestamp": "2025-09-13T07:29:40.231228"
+    },
+    {
+      "id": "2a05821b-3aac-4022-8e85-3a2755f9aae5",
+      "conversation_id": "34738776-1ccc-4bb7-9a9a-d1f9e6f8355c",
+      "user_id": "d7e0d9b4-e294-46f7-862e-8f6387d50983",
+      "message": "This appears to be wrongful termination. For permanent employees, employers must provide proper notice (usually 30 days) or pay in lieu of notice. You may be entitled to compensation. Do you have your appointment letter and employment contract?",
+      "sender": "ai",
+      "timestamp": "2025-09-13T07:30:40.231228"
+    },
+    {
+      "id": "aca6e3e1-8de4-4889-8163-d7086d152d07",
+      "conversation_id": "34738776-1ccc-4bb7-9a9a-d1f9e6f8355c",
+      "user_id": "d7e0d9b4-e294-46f7-862e-8f6387d50983",
+      "message": "Yes, I have all employment documents. What compensation can I expect?",
+      "sender": "user",
+      "timestamp": "2025-09-13T07:34:40.231228"
+    },
+    {
+      "id": "85b2ace1-1ca1-417e-8c2f-ec13d5fcc6b5",
+      "conversation_id": "34738776-1ccc-4bb7-9a9a-d1f9e6f8355c",
+      "user_id": "d7e0d9b4-e294-46f7-862e-8f6387d50983",
+      "message": "You may be entitled to: 1) Notice pay (30 days salary), 2) Gratuity (if applicable), 3) Pending salary and benefits, 4) Possible compensation for wrongful termination. I recommend filing a complaint with the Labor Commissioner and consulting an employment lawyer.",
+      "sender": "ai",
+      "timestamp": "2025-09-13T07:36:40.231228"
+    }
+  ],
+  "created_at": "2025-09-20T07:24:40.231892"
+}

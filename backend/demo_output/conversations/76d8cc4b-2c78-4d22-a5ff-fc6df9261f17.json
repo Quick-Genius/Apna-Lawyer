@@ -1,0 +1,57 @@
+{
+  "conversation_id": "76d8cc4b-2c78-4d22-a5ff-fc6df9261f17",
+  "user_id": "2ceeb48f-27f1-443a-b92e-0f6eab89e4e8",
+  "topic": "Legal Consultation",
+  "message_count": 6,
+  "messages": [
+    {
+      "id": "d2daf18c-69f0-47bc-a949-a4c01d7e5589",
+      "conversation_id": "76d8cc4b-2c78-4d22-a5ff-fc6df9261f17",
+      "user_id": "2ceeb48f-27f1-443a-b92e-0f6eab89e4e8",
+      "message": "I bought a defective product online and the seller is refusing to refund. What can I do?",
+      "sender": "user",
+      "timestamp": "2025-09-17T07:24:40.232809"
+    },
+    {
+      "id": "d0d8bd88-a21d-4ed3-b551-c1dce0169afb",
+      "conversation_id": "76d8cc4b-2c78-4d22-a5ff-fc6df9261f17",
+      "user_id": "2ceeb48f-27f1-443a-b92e-0f6eab89e4e8",
+      "message": "This falls under consumer protection laws. The Consumer Protection Act, 2019 gives you strong rights. Did you try the seller's return policy first? Also, do you have proof of purchase and evidence of the defect?",
+      "sender": "ai",
+      "timestamp": "2025-09-17T07:26:40.232809"
+    },
+    {
+      "id": "6d858c68-0bc8-4387-af27-cbec65f71376",
+      "conversation_id": "76d8cc4b-2c78-4d22-a5ff-fc6df9261f17",
+      "user_id": "2ceeb48f-27f1-443a-b92e-0f6eab89e4e8",
+      "message": "Yes, I have the invoice and photos of the defective product. The seller says no returns after 7 days.",
+      "sender": "user",
+      "timestamp": "2025-09-17T07:29:40.232809"
+    },
+    {
+      "id": "f5832c7a-6f86-4def-9488-2aa7ec099595",
+      "conversation_id": "76d8cc4b-2c78-4d22-a5ff-fc6df9261f17",
+      "user_id": "2ceeb48f-27f1-443a-b92e-0f6eab89e4e8",
+      "message": "The 7-day policy doesn't override your consumer rights for defective products. Under the Consumer Protection Act, you're entitled to repair, replacement, or refund for defective goods. You can file a complaint with the Consumer Forum.",
+      "sender": "ai",
+      "timestamp": "2025-09-17T07:30:40.232809"
+    },
+    {
+      "id": "f0ace1c0-44f2-4aae-b3b5-edb8b35bd886",
+      "conversation_id": "76d8cc4b-2c78-4d22-a5ff-fc6df9261f17",
+      "user_id": "2ceeb48f-27f1-443a-b92e-0f6eab89e4e8",
+      "message": "How do I file a consumer complaint?",
+      "sender": "user",
+      "timestamp": "2025-09-17T07:34:40.232809"
+    },
+    {
+      "id": "b5fb8823-cab9-416c-837c-120f860db930",
+      "conversation_id": "76d8cc4b-2c78-4d22-a5ff-fc6df9261f17",
+      "user_id": "2ceeb48f-27f1-443a-b92e-0f6eab89e4e8",
+      "message": "You can file online through the National Consumer Helpline or visit your District Consumer Forum. For claims up to ₹20 lakhs, approach the District Forum. The process is simple, and you can even represent yourself. Keep all evidence ready.",
+      "sender": "ai",
+      "timestamp": "2025-09-17T07:35:40.232809"
+    }
+  ],
+  "created_at": "2025-09-20T07:24:40.233086"
+}

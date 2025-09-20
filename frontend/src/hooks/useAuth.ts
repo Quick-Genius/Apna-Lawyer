@@ -1,39 +1,51 @@
 import { useState, useEffect } from 'react';
-
-interface User {
-  name: string;
-  email: string;
-  type?: 'user' | 'lawyer';
-}
+import { authService, User } from '../services/auth';
 
 export function useAuth() {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const userData = localStorage.getItem('apna-lawyer-user');
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        setIsSignedIn(true);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('apna-lawyer-user');
-      }
-    }
+    // Check authentication status on mount
+    const checkAuth = () => {
+      const isAuthenticated = authService.isAuthenticated();
+      const currentUser = authService.getCurrentUser();
+      
+      setIsSignedIn(isAuthenticated);
+      setUser(currentUser);
+      setLoading(false);
+    };
+
+    checkAuth();
   }, []);
 
-  const signOut = () => {
-    localStorage.removeItem('apna-lawyer-user');
-    localStorage.removeItem('access_token');
-    setUser(null);
-    setIsSignedIn(false);
+  const signOut = async () => {
+    try {
+      setLoading(true);
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      setIsSignedIn(false);
+      setLoading(false);
+    }
+  };
+
+  const refreshUser = () => {
+    const currentUser = authService.getCurrentUser();
+    const isAuthenticated = authService.isAuthenticated();
+    
+    setUser(currentUser);
+    setIsSignedIn(isAuthenticated);
   };
 
   return {
     isSignedIn,
     user,
-    signOut
+    loading,
+    signOut,
+    refreshUser
   };
 }

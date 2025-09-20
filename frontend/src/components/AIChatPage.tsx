@@ -19,7 +19,9 @@ import {
   Users as UsersIcon,
   Loader2,
   Image as ImageIcon,
-  AlertCircle
+  AlertCircle,
+
+  FileText
 } from "lucide-react";
 
 interface AIChatPageProps {
@@ -33,10 +35,15 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [extractedText, setExtractedText] = useState<string>("");
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [attachedImageName, setAttachedImageName] = useState<string>("");
+  const [attachedDocument, setAttachedDocument] = useState<File | null>(null);
+  const [attachedDocumentName, setAttachedDocumentName] = useState<string>("");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
 
   const avatarInfo = {
     mike: { name: "Mike", title: "Legal Expert", avatar: "/avatars/male-avatar.png" },
@@ -59,6 +66,8 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
   useEffect(() => {
     scrollToBottom();
   }, [chatHistory]);
+
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -105,26 +114,63 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
   };
 
   const sendMessage = async () => {
-    if (!message.trim() || isLoading) return;
+    if ((!message.trim() && !attachedImage && !attachedDocument) || isLoading) return;
 
     const userMessage = message.trim();
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Create user message display text
+    let displayMessage = userMessage;
+    if (attachedImage && attachedImageName) {
+      displayMessage = userMessage ? `${userMessage}\n\n📷 ${attachedImageName}` : `📷 ${attachedImageName}`;
+    } else if (attachedDocument && attachedDocumentName) {
+      displayMessage = userMessage ? `${userMessage}\n\n📄 ${attachedDocumentName}` : `📄 ${attachedDocumentName}`;
+    }
     
     // Add user message to chat
     const userChatMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       type: 'user',
-      message: userMessage,
+      message: displayMessage,
       timestamp
     };
     
     setChatHistory(prev => [...prev, userChatMessage]);
+    
+    // Clear inputs
     setMessage("");
+    const currentAttachedImage = attachedImage;
+    const currentAttachedDocument = attachedDocument;
+    setAttachedImage(null);
+    setAttachedImageName("");
+    setAttachedDocument(null);
+    setAttachedDocumentName("");
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await apiService.sendMessage(userMessage);
+      let response;
+      
+      if (currentAttachedImage) {
+        // Send message with image (OCR happens on backend)
+        response = await apiService.sendMessage(
+          userMessage || "Please analyze this image", 
+          currentAttachedImage
+        );
+      } else if (currentAttachedDocument) {
+        // Extract text from document first, then send message
+        const docResponse = await apiService.extractTextFromDocument(currentAttachedDocument);
+        if (docResponse.success && docResponse.extracted_text) {
+          const documentText = `Document content:\n\n${docResponse.extracted_text}`;
+          const finalMessage = userMessage ? `${userMessage}\n\n${documentText}` : `Please analyze this document:\n\n${documentText}`;
+          response = await apiService.sendMessage(finalMessage);
+        } else {
+          throw new Error('Failed to extract text from document');
+        }
+      } else {
+        // Regular text message
+        response = await apiService.sendMessage(userMessage);
+      }
       
       // Add AI response to chat
       const aiChatMessage: ChatMessage = {
@@ -163,49 +209,21 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
       return;
     }
 
-    setIsLoading(true);
     setError(null);
 
     try {
-      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      // Convert image to base64 for attachment (NO OCR yet)
+      const base64 = await apiService.fileToBase64(file);
+      setAttachedImage(base64);
+      setAttachedImageName(file.name);
       
-      // Add user message indicating file upload
-      const userMessage: ChatMessage = {
-        id: `user-${Date.now()}`,
-        type: 'user',
-        message: `📷 Uploaded image: ${file.name}`,
-        timestamp
-      };
-      setChatHistory(prev => [...prev, userMessage]);
-
-      // Extract text from image using OCR
-      const ocrResponse = await apiService.ocrImage(file);
-      
-      if (ocrResponse.success && ocrResponse.extracted_text) {
-        // Set extracted text in the input for user review
-        setExtractedText(ocrResponse.extracted_text);
-        setMessage(`Extracted text from image:\n\n${ocrResponse.extracted_text}\n\nPlease analyze this document.`);
-        
-        // Add extracted text message
-        const extractedMessage: ChatMessage = {
-          id: `extracted-${Date.now()}`,
-          type: 'ai',
-          message: `✅ Text extracted from image:\n\n${ocrResponse.extracted_text}`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setChatHistory(prev => [...prev, extractedMessage]);
-      } else {
-        setError('No text could be extracted from the image');
-      }
-    } catch (err) {
-      console.error('Failed to process image:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process image');
-    } finally {
-      setIsLoading(false);
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    } catch (err) {
+      console.error('Failed to process image:', err);
+      setError(err instanceof Error ? err.message : 'Failed to process image');
     }
   };
 
@@ -222,51 +240,24 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
       return;
     }
 
-    setIsLoading(true);
     setError(null);
 
     try {
-      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      // Attach document for processing on send (like images)
+      setAttachedDocument(file);
+      setAttachedDocumentName(file.name);
       
-      // Add user message indicating file upload
-      const userMessage: ChatMessage = {
-        id: `user-${Date.now()}`,
-        type: 'user',
-        message: `📄 Uploaded document: ${file.name}`,
-        timestamp
-      };
-      setChatHistory(prev => [...prev, userMessage]);
-
-      // Extract text from document
-      const docResponse = await apiService.extractTextFromDocument(file);
-      
-      if (docResponse.success && docResponse.extracted_text) {
-        // Set extracted text in the input for user review
-        setExtractedText(docResponse.extracted_text);
-        setMessage(`Extracted text from document:\n\n${docResponse.extracted_text}\n\nPlease analyze this document.`);
-        
-        // Add extracted text message
-        const extractedMessage: ChatMessage = {
-          id: `extracted-${Date.now()}`,
-          type: 'ai',
-          message: `✅ Text extracted from document:\n\n${docResponse.extracted_text.substring(0, 500)}${docResponse.extracted_text.length > 500 ? '...' : ''}`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setChatHistory(prev => [...prev, extractedMessage]);
-      } else {
-        setError('No text could be extracted from the document');
-      }
-    } catch (err) {
-      console.error('Failed to process document:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process document');
-    } finally {
-      setIsLoading(false);
       // Reset file input
       if (documentInputRef.current) {
         documentInputRef.current.value = '';
       }
+    } catch (err) {
+      console.error('Failed to process document:', err);
+      setError(err instanceof Error ? err.message : 'Failed to process document');
     }
   };
+
+
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -328,27 +319,95 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
           </div>
         </div>
 
-        {/* Sample Questions */}
+        {/* Previous Chats (for logged-in users) or Sample Questions (for anonymous users) */}
         <div>
-          <h4 className="text-[#36454F] mb-4">Sample Questions</h4>
-          <div className="space-y-2">
-            {sampleQuestions.slice(0, 3).map((question, index) => (
-              <Button 
-                key={index}
-                variant="ghost" 
-                size="sm"
-                className="w-full text-left justify-start text-gray-600 hover:text-[#36454F] hover:bg-white/80 h-auto p-3 text-xs rounded-xl"
-                onClick={() => setMessage(question)}
-              >
-                "{question}"
-              </Button>
-            ))}
-          </div>
+          {isSignedIn ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-[#36454F]">Previous Chats</h4>
+                {chatHistory.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-[#D4AF37] hover:text-[#D4AF37]/80 p-1"
+                    onClick={loadChatHistory}
+                  >
+                    Refresh
+                  </Button>
+                )}
+              </div>
+              <div className="space-y-2">
+                {chatHistory.length > 0 ? (
+                  <>
+                    {chatHistory
+                      .filter(chat => chat.type === 'user')
+                      .slice(-3)
+                      .reverse()
+                      .map((chat, index) => (
+                        <Button 
+                          key={chat.id}
+                          variant="ghost" 
+                          size="sm"
+                          className="w-full text-left justify-start text-gray-600 hover:text-[#36454F] hover:bg-white/80 h-auto p-3 text-xs rounded-xl"
+                          onClick={() => setMessage(chat.message)}
+                        >
+                          <MessageCircle className="w-3 h-3 mr-2 flex-shrink-0" />
+                          <span className="truncate">"{chat.message.length > 45 ? chat.message.substring(0, 45) + '...' : chat.message}"</span>
+                        </Button>
+                      ))}
+                    {chatHistory.filter(chat => chat.type === 'user').length > 3 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-center text-[#D4AF37] hover:text-[#D4AF37]/80 text-xs py-2"
+                        onClick={() => {
+                          // Could implement a modal or expand functionality here
+                          console.log('View all chats clicked');
+                        }}
+                      >
+                        View all {chatHistory.filter(chat => chat.type === 'user').length} chats
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-4 text-gray-500 text-xs">
+                    <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>No previous chats yet</p>
+                    <p className="text-gray-400">Start a conversation to see your chat history here</p>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <h4 className="text-[#36454F] mb-4">Sample Questions</h4>
+              <div className="space-y-2">
+                {sampleQuestions.slice(0, 3).map((question, index) => (
+                  <Button 
+                    key={index}
+                    variant="ghost" 
+                    size="sm"
+                    className="w-full text-left justify-start text-gray-600 hover:text-[#36454F] hover:bg-white/80 h-auto p-3 text-xs rounded-xl"
+                    onClick={() => setMessage(question)}
+                  >
+                    "{question}"
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
+        {/* Top Bar */}
+        <div className="border-b border-gray-100 bg-white/95 backdrop-blur-sm p-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-lg font-medium text-[#36454F]">Legal Assistant</h2>
+          </div>
+        </div>
+
         {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto space-y-6">
@@ -485,6 +544,54 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
         <div className="border-t border-gray-100 bg-white/95 backdrop-blur-sm p-6 relative">
           <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/30 to-transparent"></div>
           <div className="max-w-4xl mx-auto">
+            {/* Attached Image Preview */}
+            {attachedImage && (
+              <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm text-blue-800">📷 {attachedImageName}</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setAttachedImage(null);
+                      setAttachedImageName("");
+                    }}
+                    className="text-blue-600 hover:text-blue-800 h-6 w-6 p-0"
+                  >
+                    ×
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-600 mt-1">Image will be analyzed when you send your message</p>
+              </div>
+            )}
+
+            {/* Attached Document Preview */}
+            {attachedDocument && (
+              <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-green-800">📄 {attachedDocumentName}</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setAttachedDocument(null);
+                      setAttachedDocumentName("");
+                    }}
+                    className="text-green-600 hover:text-green-800 h-6 w-6 p-0"
+                  >
+                    ×
+                  </Button>
+                </div>
+                <p className="text-xs text-green-600 mt-1">Document will be processed when you send your message</p>
+              </div>
+            )}
+
             <div className="flex gap-2 mb-3">
               <input
                 type="file"
@@ -503,22 +610,22 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed ${attachedImage ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}`}
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
+                disabled={isLoading || !!attachedImage || !!attachedDocument}
               >
                 <ImageIcon className="w-4 h-4 mr-1" />
-                Attach Image
+                {attachedImage ? 'Image Attached' : 'Attach Image'}
               </Button>
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed ${attachedDocument ? 'bg-green-50 border-green-200 text-green-600' : ''}`}
                 onClick={() => documentInputRef.current?.click()}
-                disabled={isLoading}
+                disabled={isLoading || !!attachedDocument || !!attachedImage}
               >
                 <Upload className="w-4 h-4 mr-1" />
-                Upload File
+                {attachedDocument ? 'Document Attached' : 'Upload File'}
               </Button>
             </div>
             
@@ -527,9 +634,15 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask your legal question or upload a document for analysis..."
+                placeholder={
+                  attachedImage 
+                    ? "Ask a question about the attached image..." 
+                    : attachedDocument 
+                    ? "Ask a question about the attached document..." 
+                    : "Ask your legal question or upload a document for analysis..."
+                }
                 className="flex-1 bg-white border-gray-200 text-[#36454F] placeholder-gray-500 resize-none rounded-2xl shadow-sm"
-                rows={extractedText ? 6 : 2}
+                rows={2}
                 disabled={isLoading}
               />
               <div className="flex gap-2">
@@ -545,7 +658,7 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
                 <Button 
                   size="sm" 
                   className="bg-[#77DDE7] hover:bg-[#77DDE7]/80 text-[#36454F] shadow-sm rounded-xl h-10 w-10 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!message.trim() || isLoading}
+                  disabled={(!message.trim() && !attachedImage && !attachedDocument) || isLoading}
                   onClick={sendMessage}
                   style={{ backgroundColor: '#77DDE7', color: '#36454F' }}
                 >
