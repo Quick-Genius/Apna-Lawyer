@@ -38,7 +38,7 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',  # Allow anonymous by default, views can override with IsAuthenticated
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -63,7 +63,11 @@ MIDDLEWARE = [
 ]
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,https://vision-bros.vercel.app').split(',')
+CORS_ALLOWED_ORIGINS = os.getenv(
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://vision-bros.vercel.app'
+).split(',')
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development to avoid local CORS issues
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -80,7 +84,10 @@ CORS_ALLOW_HEADERS = [
 
 # CSRF settings for API development
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
-CSRF_TRUSTED_ORIGINS = [FRONTEND_URL] + os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,https://vision-bros.vercel.app').split(',')
+CSRF_TRUSTED_ORIGINS = [FRONTEND_URL] + os.getenv(
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://vision-bros.vercel.app'
+).split(',')
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
 

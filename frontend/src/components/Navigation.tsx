@@ -1,5 +1,6 @@
+import React from "react";
 import { Button } from "./ui/button";
-import { Scale, Users, FileText, Bot, Home, User, LogOut, Settings } from "lucide-react";
+import { Scale, Users, FileText, Bot, Home, User, LogOut, Settings, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { useAuth } from "../hooks/useAuth";
@@ -30,9 +31,19 @@ export default function Navigation({
   const actualUserName = user ? user.name : userName;
 
   const handleLogout = async () => {
-    await signOut();
-    if (onLogout) {
-      onLogout();
+    try {
+      console.log('Logout initiated...');
+      await signOut();
+      console.log('Logout successful');
+      if (onLogout) {
+        onLogout();
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still call onLogout even if there's an error to ensure UI updates
+      if (onLogout) {
+        onLogout();
+      }
     }
   };
   const navItems = [
@@ -86,29 +97,42 @@ export default function Navigation({
           {/* User Area */}
           <div className="flex items-center gap-3">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-10 w-10 rounded-full p-0">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-[#D4AF37] text-white">
-                      {actualIsLoggedIn ? getUserInitial(actualUserName) : "G"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
+              <DropdownMenuTrigger className="flex items-center gap-2 h-10 px-2 rounded-full hover:bg-gray-100 transition-colors border-0 bg-transparent">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-[#D4AF37] text-white text-sm">
+                    {actualIsLoggedIn ? getUserInitial(actualUserName) : "G"}
+                  </AvatarFallback>
+                </Avatar>
+                <ChevronDown className="h-4 w-4 text-gray-500" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent 
+                align="end" 
+                className="w-48"
+                sideOffset={5}
+              >
                 {actualIsLoggedIn ? (
                   <>
-                    <DropdownMenuItem className="cursor-pointer">
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        console.log('Profile clicked');
+                        // TODO: Navigate to profile page
+                      }}
+                    >
                       <User className="w-4 h-4 mr-2" />
                       Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer">
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        console.log('Settings clicked');
+                        // TODO: Navigate to settings page
+                      }}
+                    >
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      className="cursor-pointer text-red-600"
                       onClick={handleLogout}
+                      className="text-red-600"
                     >
                       <LogOut className="w-4 h-4 mr-2" />
                       Logout
@@ -116,7 +140,6 @@ export default function Navigation({
                   </>
                 ) : (
                   <DropdownMenuItem 
-                    className="cursor-pointer"
                     onClick={onSignIn}
                   >
                     <User className="w-4 h-4 mr-2" />

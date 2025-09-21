@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
@@ -104,11 +104,29 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
       });
       
       setChatHistory(formattedHistory.reverse()); // Reverse to show oldest first
+      
+      // Only show error if there was existing chat history that failed to load
+      // If response.chats is empty, that's normal (no chat history yet)
+      
     } catch (err) {
       console.error('Failed to load chat history:', err);
-      // Don't show error for 403 Forbidden when not signed in
-      if (err instanceof Error && !err.message.includes('sign in')) {
-        setError('Failed to load chat history');
+      
+      // Only show error message if:
+      // 1. User is signed in (we already checked this)
+      // 2. It's not a 403/401 error (authentication issue)
+      // 3. It's not a "no chat history" scenario (empty response is normal)
+      if (err instanceof Error) {
+        const errorMessage = err.message.toLowerCase();
+        const isAuthError = errorMessage.includes('sign in') || 
+                           errorMessage.includes('unauthorized') || 
+                           errorMessage.includes('forbidden');
+        const isNoDataError = errorMessage.includes('no chat') || 
+                             errorMessage.includes('not found');
+        
+        // Only show error for actual failures, not for empty/missing data
+        if (!isAuthError && !isNoDataError) {
+          setError('Failed to load chat history. Please try refreshing the page.');
+        }
       }
     }
   };
