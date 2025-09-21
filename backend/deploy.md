@@ -1,15 +1,24 @@
 # Deployment Instructions
 
-## Memory Issue Fix Summary
+## Deployment Issues Fixed
 
-The deployment was failing due to memory exhaustion caused by EasyOCR library. Here's what was fixed:
+### 1. Memory Issue (RESOLVED)
+The deployment was failing due to memory exhaustion caused by EasyOCR library.
 
-### Changes Made:
+**Changes Made:**
 1. **Removed EasyOCR** - This library loads 1.5GB+ neural network models
 2. **Kept Tesseract OCR** - Lightweight alternative for text extraction
 3. **Optimized Gunicorn** - Single worker configuration to reduce memory usage
 4. **Added Memory Management** - Garbage collection optimizations
 5. **Added Health Check** - Monitor memory usage at `/health/`
+
+### 2. Python 3.13 Compatibility Issue (RESOLVED)
+`pkg_resources` module was removed in Python 3.13, causing import errors.
+
+**Changes Made:**
+1. **Updated djangorestframework-simplejwt** - From 5.3.0 to 5.4.0 (Python 3.13 compatible)
+2. **Added setuptools** - Explicit dependency for pkg_resources compatibility
+3. **Added packaging** - Additional fallback dependency
 
 ### Render Deployment Steps:
 
