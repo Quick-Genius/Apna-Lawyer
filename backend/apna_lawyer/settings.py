@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-your-secret-key')
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,visionbros.onrender.com').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -57,7 +57,7 @@ MIDDLEWARE = [
 ]
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = True  # For development only
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,https://vision-bros.vercel.app').split(',')
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -73,7 +73,8 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # CSRF settings for API development
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+CSRF_TRUSTED_ORIGINS = [FRONTEND_URL] + os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,https://vision-bros.vercel.app').split(',')
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
 
@@ -181,5 +182,5 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
 
-# Allow all hosts for development
-ALLOWED_HOSTS = ['*']
+# Production-ready ALLOWED_HOSTS configuration
+# ALLOWED_HOSTS = ['*']  # Commented out for security
