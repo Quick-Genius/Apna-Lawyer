@@ -398,19 +398,24 @@ export default function AIChatPage({ selectedAvatar = "mike" }: AIChatPageProps)
             </>
           ) : (
             <>
-              <h4 className="text-[#36454F] mb-4">Sample Questions</h4>
-              <div className="space-y-2">
-                {sampleQuestions.slice(0, 3).map((question, index) => (
-                  <Button 
-                    key={index}
-                    variant="ghost" 
-                    size="sm"
-                    className="w-full text-left justify-start text-gray-600 hover:text-[#36454F] hover:bg-white/80 h-auto p-3 text-xs rounded-xl"
-                    onClick={() => setMessage(question)}
-                  >
-                    "{question}"
-                  </Button>
-                ))}
+              <h4 className="text-[#36454F] mb-4">Chat History</h4>
+              <div className="text-center py-6 px-4">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-r from-[#77DDE7]/20 to-[#AEC6CF]/20 flex items-center justify-center">
+                  <MessageCircle className="w-6 h-6 text-[#36454F] opacity-50" />
+                </div>
+                <p className="text-sm text-gray-600 mb-3">Sign in to see your chat history</p>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    // Navigate to login page - this will be handled by the parent component
+                    console.log('Navigate to login requested from chat sidebar');
+                    // You can add a callback prop to handle navigation if needed
+                  }}
+                  className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-white text-xs px-4 py-2 rounded-xl"
+                >
+                  Sign In
+                </Button>
+                <p className="text-xs text-gray-500 mt-3">Your conversations will be saved and accessible across devices</p>
               </div>
             </>
           )}

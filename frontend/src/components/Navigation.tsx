@@ -96,58 +96,65 @@ export default function Navigation({
 
           {/* User Area */}
           <div className="flex items-center gap-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 h-10 px-2 rounded-full hover:bg-gray-100 transition-colors border-0 bg-transparent">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-[#D4AF37] text-white text-sm">
-                    {actualIsLoggedIn ? getUserInitial(actualUserName) : "G"}
-                  </AvatarFallback>
-                </Avatar>
-                <ChevronDown className="h-4 w-4 text-gray-500" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="end" 
-                className="w-48"
-                sideOffset={5}
-              >
-                {actualIsLoggedIn ? (
-                  <>
-                    <DropdownMenuItem 
-                      onClick={() => {
-                        console.log('Profile clicked');
-                        // TODO: Navigate to profile page
-                      }}
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => {
-                        console.log('Settings clicked');
-                        // TODO: Navigate to settings page
-                      }}
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={handleLogout}
-                      className="text-red-600"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Logout
-                    </DropdownMenuItem>
-                  </>
-                ) : (
+            {actualIsLoggedIn ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-2 h-10 px-2 rounded-full hover:bg-gray-100 transition-colors border-0 bg-transparent">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-[#D4AF37] text-white text-sm">
+                      {getUserInitial(actualUserName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-48"
+                  sideOffset={5}
+                >
                   <DropdownMenuItem 
-                    onClick={onSignIn}
+                    onClick={() => {
+                      console.log('Profile clicked');
+                      // TODO: Navigate to profile page
+                    }}
                   >
                     <User className="w-4 h-4 mr-2" />
-                    Sign In
+                    Profile
                   </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      console.log('Settings clicked');
+                      // TODO: Navigate to settings page
+                    }}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="text-red-600"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button
+                  onClick={onSignUp}
+                  className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-white rounded-xl px-4 py-2 shadow-sm"
+                >
+                  Sign Up
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={onSignIn}
+                  className="text-gray-600 hover:text-[#36454F] hover:bg-gray-50 rounded-xl px-4 py-2"
+                >
+                  Sign In
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -11,10 +11,51 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 
 class OCRService:
     def __init__(self):
-        # Configure tesseract path if needed (for different OS)
-        # pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'  # Linux/Mac
-        # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Windows
-        pass
+        # Configure tesseract path for different environments
+        self._configure_tesseract_path()
+    
+    def _configure_tesseract_path(self):
+        """Configure Tesseract path based on environment"""
+        import platform
+        import shutil
+        
+        # Try to find tesseract in common locations
+        possible_paths = [
+            '/usr/bin/tesseract',  # Linux/Ubuntu
+            '/usr/local/bin/tesseract',  # macOS with Homebrew
+            '/opt/homebrew/bin/tesseract',  # macOS with Apple Silicon Homebrew
+            'tesseract',  # If it's in PATH
+        ]
+        
+        # Check if tesseract is available in PATH first
+        tesseract_path = shutil.which('tesseract')
+        
+        if tesseract_path:
+            pytesseract.pytesseract.tesseract_cmd = tesseract_path
+            print(f"Tesseract found at: {tesseract_path}")
+        else:
+            # Try common installation paths
+            for path in possible_paths:
+                if os.path.exists(path):
+                    pytesseract.pytesseract.tesseract_cmd = path
+                    print(f"Tesseract configured at: {path}")
+                    return
+            
+            print("Warning: Tesseract not found in common locations")
+            # Let pytesseract try to find it automatically
+    
+    def check_tesseract_installation(self):
+        """Check if Tesseract is properly installed and accessible"""
+        try:
+            version = pytesseract.get_tesseract_version()
+            languages = pytesseract.get_languages()
+            return True, {
+                'version': str(version),
+                'languages': languages,
+                'path': pytesseract.pytesseract.tesseract_cmd
+            }
+        except Exception as e:
+            return False, str(e)
     
     def extract_text_from_image(self, image_file):
         """
@@ -27,6 +68,13 @@ class OCRService:
             str: Extracted text from the image
         """
         try:
+            # First check if Tesseract is available
+            is_available, info = self.check_tesseract_installation()
+            if not is_available:
+                error_msg = f"Tesseract OCR is not properly installed or configured: {info}"
+                print(error_msg)
+                return error_msg
+            
             # Handle different input types
             if isinstance(image_file, InMemoryUploadedFile):
                 # Django uploaded file
@@ -42,8 +90,13 @@ class OCRService:
             if image.mode != 'RGB':
                 image = image.convert('RGB')
             
-            # Extract text using pytesseract
-            extracted_text = pytesseract.image_to_string(image, lang='eng+hin')
+            # Extract text using pytesseract with better error handling
+            try:
+                extracted_text = pytesseract.image_to_string(image, lang='eng+hin')
+            except pytesseract.TesseractNotFoundError:
+                return "Tesseract OCR engine not found. Please ensure Tesseract is installed on the server."
+            except pytesseract.TesseractError as te:
+                return f"Tesseract OCR error: {str(te)}"
             
             # Clean up the text
             cleaned_text = self._clean_extracted_text(extracted_text)
@@ -51,8 +104,11 @@ class OCRService:
             return cleaned_text
             
         except Exception as e:
+            error_msg = f"Error extracting text from image: {str(e)}"
             print(f"OCR Error: {e}")
-            return f"Error extracting text from image: {str(e)}"
+            import traceback
+            print(f"Full traceback: {traceback.format_exc()}")
+            return error_msg
     
     def extract_text_from_base64(self, base64_string):
         """
