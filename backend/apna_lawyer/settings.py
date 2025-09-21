@@ -12,6 +12,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-your-secret-key')
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+
+# Memory optimization for production
+if not DEBUG:
+    # Reduce memory usage in production
+    import gc
+    gc.set_threshold(700, 10, 10)  # More aggressive garbage collection
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,visionbros.onrender.com').split(',')
 
 INSTALLED_APPS = [

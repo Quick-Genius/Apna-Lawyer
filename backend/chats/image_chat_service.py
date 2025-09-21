@@ -9,15 +9,11 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 
 try:
-    import easyocr
+    import pytesseract
+    from PIL import Image
     OCR_AVAILABLE = True
 except ImportError:
-    try:
-        import pytesseract
-        from PIL import Image
-        OCR_AVAILABLE = True
-    except ImportError:
-        OCR_AVAILABLE = False
+    OCR_AVAILABLE = False
 
 @dataclass
 class StoredImage:
@@ -39,13 +35,7 @@ class ImageChatService:
         
         # Initialize OCR if available
         if OCR_AVAILABLE:
-            try:
-                # Try EasyOCR first (more accurate)
-                self.ocr_reader = easyocr.Reader(['en'])
-                self.ocr_method = 'easyocr'
-            except:
-                # Fallback to Tesseract
-                self.ocr_method = 'tesseract'
+            self.ocr_method = 'tesseract'
     
     def get_user_session_id(self, request) -> str:
         """
@@ -117,15 +107,10 @@ class ImageChatService:
             if not os.path.exists(full_path):
                 return "Image file not found."
             
-            if self.ocr_method == 'easyocr' and self.ocr_reader:
-                # Use EasyOCR
-                results = self.ocr_reader.readtext(full_path)
-                extracted_text = ' '.join([result[1] for result in results])
-            else:
-                # Use Tesseract
-                from PIL import Image
-                image = Image.open(full_path)
-                extracted_text = pytesseract.image_to_string(image)
+            # Use Tesseract
+            from PIL import Image
+            image = Image.open(full_path)
+            extracted_text = pytesseract.image_to_string(image)
             
             return extracted_text.strip() if extracted_text.strip() else "No text found in image."
             

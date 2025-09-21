@@ -1,5 +1,13 @@
 # Backend Deployment Configuration
 
+## Memory Optimization Updates
+
+**IMPORTANT**: The app has been optimized to fix memory issues on Render:
+
+1. **Removed EasyOCR**: Replaced with lightweight Tesseract OCR to reduce memory usage by ~1.5GB
+2. **Optimized Gunicorn**: Single worker configuration to minimize memory footprint
+3. **Memory Management**: Added garbage collection optimizations
+
 ## Environment Variables Setup
 
 Your backend now uses environment variables for proper CORS configuration and deployment flexibility.
@@ -18,6 +26,14 @@ FRONTEND_URL=https://vision-bros.vercel.app
 CORS_ALLOWED_ORIGINS=https://vision-bros.vercel.app
 DEBUG=False
 ALLOWED_HOSTS=visionbros.onrender.com
+```
+
+## Render Deployment Command
+
+Update your Render service to use the optimized gunicorn configuration:
+
+```bash
+gunicorn apna_lawyer.wsgi:application -c gunicorn.conf.py
 ```
 
 ### Your Deployment URLs
