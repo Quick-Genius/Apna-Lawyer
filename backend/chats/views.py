@@ -148,18 +148,30 @@ def test_ai_service(request):
 @api_view(['GET'])
 def test_ocr_service(request):
     """
-    Test endpoint to check OCR service status
+    Test endpoint to check OCR service status and Tesseract installation
     """
     try:
-        success, response = ocr_service.test_ocr()
+        # Check Tesseract installation
+        tesseract_available, tesseract_info = ocr_service.check_tesseract_installation()
+        
+        # Test OCR functionality
+        ocr_success, ocr_response = ocr_service.test_ocr()
         
         return Response({
-            'ocr_service_available': success,
-            'test_response': response
+            'tesseract_installed': tesseract_available,
+            'tesseract_info': tesseract_info,
+            'ocr_service_available': ocr_success,
+            'ocr_test_response': ocr_response,
+            'status': 'OK' if tesseract_available and ocr_success else 'ERROR'
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({
+            'error': str(e),
+            'tesseract_installed': False,
+            'ocr_service_available': False,
+            'status': 'ERROR'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])  # Allow anonymous access

@@ -12,3 +12,5 @@ urlpatterns = [
     path('upload-image/', views.upload_chat_image, name='upload_chat_image'),
     path('chat-with-images/', views.process_chat_with_images, name='chat_with_images'),
 ]
+
+
