@@ -11,14 +11,14 @@ load_dotenv(BASE_DIR / '.env')
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-your-secret-key')
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 # Memory optimization for production
 if not DEBUG:
     # Reduce memory usage in production
     import gc
     gc.set_threshold(700, 10, 10)  # More aggressive garbage collection
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,visionbros.onrender.com').split(',')
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'visionbros.onrender.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -63,10 +63,13 @@ MIDDLEWARE = [
 ]
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = os.getenv(
-    'CORS_ALLOWED_ORIGINS',
-    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://vision-bros.vercel.app'
-).split(',')
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000', 
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://vision-bros.vercel.app'
+]
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development to avoid local CORS issues
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
@@ -84,10 +87,13 @@ CORS_ALLOW_HEADERS = [
 
 # CSRF settings for API development
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
-CSRF_TRUSTED_ORIGINS = [FRONTEND_URL] + os.getenv(
-    'CORS_ALLOWED_ORIGINS',
-    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://vision-bros.vercel.app'
-).split(',')
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000', 
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://vision-bros.vercel.app'
+]
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
 
