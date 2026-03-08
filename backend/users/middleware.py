@@ -27,8 +27,10 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
         '/api/profile/',
         '/api/logout/',
         '/api/change-password/',
-        '/chats/',
-        '/lawyers/dashboard/',
+        '/chats/',  # All chat endpoints require authentication
+        '/lawyers/',  # All lawyer endpoints require authentication
+        '/api/cases/',  # Case management requires authentication
+        '/api/clients/',  # Client management requires authentication
     ]
     
     # Routes that should be excluded from authentication

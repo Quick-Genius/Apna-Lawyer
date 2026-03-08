@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+0#!/usr/bin/env python
 """
 Direct Supabase sync using HTTP requests
 """

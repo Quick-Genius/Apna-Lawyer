@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Checkbox } from "./ui/checkbox";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import ModernSignupPage from "./ModernSignupPage";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import ModernSigninPage from "./ModernSigninPage";
 
 interface LoginSignupPageProps {
@@ -19,9 +14,9 @@ interface LoginSignupPageProps {
   onNavigateToHome?: () => void;
 }
 
-export default function LoginSignupPage({ 
-  onBack, 
-  onLawyerRegistration, 
+export default function LoginSignupPage({
+  onBack,
+  onLawyerRegistration,
   onUserHome,
   mode = 'signin',
   onNavigateToSignIn,
@@ -29,8 +24,6 @@ export default function LoginSignupPage({
   onNavigateToLawyerRegistration,
   onNavigateToHome
 }: LoginSignupPageProps) {
-  const [currentMode, setCurrentMode] = useState<'signin' | 'signup'>(mode);
-
   // Navigation component
   const NavigationButtons = () => (
     <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg border border-gray-200">
@@ -43,62 +36,31 @@ export default function LoginSignupPage({
         <ChevronLeft className="w-4 h-4" />
         Home
       </Button>
-      
-      {currentMode === 'signin' && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentMode('signup')}
-          className="flex items-center gap-2 text-[#36454F] border-gray-300 hover:bg-gray-50"
-        >
-          Sign Up
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      )}
-      
-      {currentMode === 'signup' && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onNavigateToLawyerRegistration}
-          className="flex items-center gap-2 text-[#36454F] border-gray-300 hover:bg-gray-50"
-        >
-          Lawyer Registration
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      )}
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onNavigateToLawyerRegistration}
+        className="flex items-center gap-2 text-[#36454F] border-gray-300 hover:bg-gray-50"
+      >
+        Lawyer Registration
+        <ChevronRight className="w-4 h-4" />
+      </Button>
     </div>
   );
 
-  // If signup is selected, show the modern signup page
-  if (currentMode === 'signup') {
-    return (
-      <>
-        <ModernSignupPage
-          onBack={onBack}
-          onLawyerRegistration={onLawyerRegistration}
-          onUserHome={onUserHome}
-          onSwitchToLogin={() => setCurrentMode('signin')}
-        />
-        <NavigationButtons />
-      </>
-    );
-  }
-
-  // If signin is selected, show the modern signin page
-  if (currentMode === 'signin') {
-    return (
-      <>
-        <ModernSigninPage
-          onBack={onBack}
-          onUserHome={onUserHome}
-          onSwitchToSignup={() => setCurrentMode('signup')}
-        />
-        <NavigationButtons />
-      </>
-    );
-  }
-
-  // Fallback (shouldn't be reached)
-  return null;
+  // Show the sign-in page (primary auth entry point)
+  return (
+    <>
+      <ModernSigninPage
+        onBack={onBack}
+        onUserHome={onUserHome}
+        onSwitchToSignup={() => {
+          // Sign-up is handled via the sign-in page's "Sign up" link
+          // which redirects within ModernSigninPage
+        }}
+      />
+      <NavigationButtons />
+    </>
+  );
 }

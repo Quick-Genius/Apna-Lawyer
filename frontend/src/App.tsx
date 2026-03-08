@@ -1,251 +1,207 @@
-import { useState, useEffect } from "react";
-import Navigation from "./components/Navigation";
-import ComprehensiveHomePage from "./components/ComprehensiveHomePage";
-import AIChatPage from "./components/AIChatPage";
-import LawyersPage from "./components/LawyersPage";
-import CommunityPage from "./components/CommunityPage";
-import LawyerChatPage from "./components/LawyerChatPage";
-import LawyerBookingPage from "./components/LawyerBookingPage";
-import WelcomePopup from "./components/WelcomePopup";
-import LoginSignupPage from "./components/LoginSignupPage";
-import LawyerRegistrationPage from "./components/LawyerRegistrationPage";
-import LawyerDashboard from "./components/LawyerDashboard";
-import { useAuth } from "./hooks/useAuth";
+import { useState, useEffect } from 'react';
+import { useAuth } from './hooks/useAuth';
+import WelcomePopup from './components/WelcomePopup';
+import LoginSignupPage from './components/LoginSignupPage';
+import LawyerDashboard from './components/LawyerDashboard';
+import LawyerRegistrationPage from './components/LawyerRegistrationPage';
+import Navigation from './components/Navigation';
+import Footer from './components/Footer';
+import './styles/globals.css';
+
+type AppPage = 'welcome' | 'login' | 'lawyer-registration' | 'user-home' | 'lawyer-dashboard' | 'avatar-selection';
+
+// Placeholder components for user home pages
+function UserHomePage({ onNavigateToLogin, onNavigateToChat, onLogout }: {
+  onNavigateToLogin: () => void;
+  onNavigateToChat: () => void;
+  onLogout: () => void;
+}) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#FCFCFC] to-[#F5E6CC]/30">
+      <Navigation
+        currentPage="home"
+        onPageChange={(page) => {
+          if (page === 'login') onNavigateToLogin();
+          if (page === 'chat') onNavigateToChat();
+        }}
+        isLoggedIn={true}
+        userName="User"
+        onLogout={onLogout}
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center space-y-6 mt-20">
+          <h1 className="text-4xl font-bold text-[#36454F]">Welcome to Apna Lawyer</h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Get instant legal guidance from AI and connect with qualified lawyers
+          </p>
+          <div className="flex gap-4 justify-center mt-8">
+            <button
+              onClick={onNavigateToChat}
+              className="px-8 py-3 bg-[#D4AF37] hover:bg-[#B8941F] text-white font-semibold rounded-xl transition"
+            >
+              Start Chat with AI
+            </button>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+}
 
 export default function App() {
   const { isSignedIn, user, loading } = useAuth();
-  const [currentPage, setCurrentPage] = useState("home");
-  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
-  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-  const [selectedLawyer, setSelectedLawyer] = useState<{
-    name: string;
-    image?: string;
-    specialization?: string;
-    responseTime?: string;
-  } | null>(null);
+  const [currentPage, setCurrentPage] = useState<AppPage>('welcome');
+  const [selectedRole, setSelectedRole] = useState<'lawyer' | 'user' | null>(null);
 
-  // Check authentication status and route accordingly
+  // Check if user is authenticated and route accordingly
   useEffect(() => {
     if (!loading) {
       if (isSignedIn && user) {
-        // Route to dashboard if lawyer, home if user
-        if (user.is_lawyer) {
-          setCurrentPage("dashboard");
+        // User is authenticated, route based on user type
+        if (selectedRole === 'lawyer') {
+          setCurrentPage('lawyer-dashboard');
         } else {
-          setCurrentPage("home");
+          setCurrentPage('user-home');
         }
       } else {
-        setCurrentPage("home");
+        // User is not authenticated, show welcome/login
+        setCurrentPage('welcome');
       }
     }
-  }, [isSignedIn, user, loading]);
+  }, [isSignedIn, user, loading, selectedRole]);
 
+  // Handle role selection
   const handleRoleSelect = (role: 'lawyer' | 'user') => {
-    localStorage.setItem('apna-lawyer-visited', 'true');
-    setShowWelcomePopup(false);
-    setAuthMode('signin');
-    setCurrentPage("login");
+    setSelectedRole(role);
+    if (role === 'lawyer') {
+      setCurrentPage('lawyer-registration');
+    } else {
+      setCurrentPage('login');
+    }
   };
 
-  const handleBackToWelcome = () => {
-    setCurrentPage("welcome");
-    setShowWelcomePopup(true);
+  // Navigation handlers
+  const handleNavigateToLogin = () => {
+    setSelectedRole('user');
+    setCurrentPage('login');
   };
 
-  const handleLawyerRegistration = () => {
-    setCurrentPage("lawyer-registration");
-  };
-
-  const handleUserHome = () => {
-    // Navigate to home page (user is already authenticated via auth service)
-    setCurrentPage("home");
-  };
-
-  const handleRegistrationComplete = () => {
-    // Navigate to dashboard (user is already authenticated via auth service)
-    setCurrentPage("dashboard");
-  };
-
-  const handleSignUp = () => {
-    setAuthMode('signup');
-    setCurrentPage("login");
-  };
-
-  const handleSignIn = () => {
-    setAuthMode('signin');
-    setCurrentPage("login");
-  };
-
-  const handleLogout = () => {
-    // Logout is handled by the useAuth hook
-    setCurrentPage("home");
-  };
-
-  const handleAvatarSelection = (avatar: string) => {
-    setSelectedAvatar(avatar);
-    setCurrentPage("chat");
-  };
-
-  const handleNavigateToLawyers = () => {
-    setCurrentPage("lawyers");
-  };
-
-  const handleGetStarted = () => {
-    setShowWelcomePopup(true);
-    setCurrentPage("welcome");
-  };
-
-  // Navigation handlers for evaluator flow
-  const handleNavigateToSignIn = () => {
-    setAuthMode('signin');
-    setCurrentPage("login");
-  };
-
-  const handleNavigateToSignUp = () => {
-    setAuthMode('signup');
-    setCurrentPage("login");
-  };
-
-  const handleNavigateToLawyerRegistration = () => {
-    setCurrentPage("lawyer-registration");
-  };
-
-  const handleNavigateToDashboard = () => {
-    setCurrentPage("dashboard");
+  const handleNavigateToLawyerReg = () => {
+    setSelectedRole('lawyer');
+    setCurrentPage('lawyer-registration');
   };
 
   const handleNavigateToHome = () => {
-    setCurrentPage("home");
-  };
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case "welcome":
-        return (
-          <WelcomePopup 
-            isOpen={showWelcomePopup} 
-            onRoleSelect={handleRoleSelect} 
-          />
-        );
-      case "login":
-        return (
-          <LoginSignupPage
-            onBack={handleBackToWelcome}
-            onLawyerRegistration={handleLawyerRegistration}
-            onUserHome={handleUserHome}
-            mode={authMode}
-            onNavigateToSignIn={handleNavigateToSignIn}
-            onNavigateToSignUp={handleNavigateToSignUp}
-            onNavigateToLawyerRegistration={handleNavigateToLawyerRegistration}
-            onNavigateToHome={handleNavigateToHome}
-          />
-        );
-      case "lawyer-registration":
-        return (
-          <LawyerRegistrationPage
-            onBack={() => setCurrentPage("login")}
-            onRegistrationComplete={handleRegistrationComplete}
-            onNavigateToSignIn={handleNavigateToSignIn}
-            onNavigateToSignUp={handleNavigateToSignUp}
-            onNavigateToDashboard={handleNavigateToDashboard}
-            onNavigateToHome={handleNavigateToHome}
-          />
-        );
-      case "dashboard":
-        return (
-          <LawyerDashboard 
-            userName={user?.name || ""}
-            onLogout={handleLogout}
-            onNavigateToSignIn={handleNavigateToSignIn}
-            onNavigateToSignUp={handleNavigateToSignUp}
-            onNavigateToLawyerRegistration={handleNavigateToLawyerRegistration}
-            onNavigateToHome={handleNavigateToHome}
-          />
-        );
-      case "home":
-        return (
-          <ComprehensiveHomePage 
-            onSelectAvatar={handleAvatarSelection}
-            onNavigateToLawyers={handleNavigateToLawyers}
-            onGetStarted={handleGetStarted}
-          />
-        );
-      case "chat":
-        return <AIChatPage selectedAvatar={selectedAvatar || "mike"} />;
-      case "lawyers":
-        return (
-          <LawyersPage 
-            onLawyerChat={(lawyer) => {
-              setSelectedLawyer(lawyer);
-              setCurrentPage("lawyer-chat");
-            }}
-            onLawyerBooking={(lawyer) => {
-              setSelectedLawyer(lawyer);
-              setCurrentPage("lawyer-booking");
-            }}
-          />
-        );
-      case "community":
-        return <CommunityPage />;
-      case "lawyer-chat":
-        return (
-          <LawyerChatPage 
-            lawyerName={selectedLawyer?.name || "Legal Expert"}
-            lawyerImage={selectedLawyer?.image}
-            lawyerSpecialization={selectedLawyer?.specialization}
-            onBack={() => setCurrentPage("lawyers")}
-          />
-        );
-      case "lawyer-booking":
-        return (
-          <LawyerBookingPage 
-            lawyerName={selectedLawyer?.name || "Legal Expert"}
-            lawyerImage={selectedLawyer?.image}
-            lawyerSpecialization={selectedLawyer?.specialization}
-            responseTime={selectedLawyer?.responseTime}
-            onBack={() => setCurrentPage("lawyers")}
-          />
-        );
-      default:
-        return (
-          <ComprehensiveHomePage 
-            onSelectAvatar={handleAvatarSelection}
-            onNavigateToLawyers={handleNavigateToLawyers}
-            onGetStarted={handleGetStarted}
-          />
-        );
+    if (isSignedIn && user) {
+      setCurrentPage(selectedRole === 'lawyer' ? 'lawyer-dashboard' : 'user-home');
+    } else {
+      setCurrentPage('welcome');
     }
   };
 
-  const showNavigation = currentPage === "chat" || currentPage === "lawyers" || currentPage === "community";
+  const handleLogout = () => {
+    setCurrentPage('welcome');
+    setSelectedRole(null);
+  };
 
-  // Show loading spinner while checking authentication
+  // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FCFCFC] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#36454F]">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FCFCFC] to-[#F5E6CC]/30">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin mx-auto"></div>
+          <p className="text-[#36454F] text-lg">Loading Apna Lawyer...</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#FCFCFC]">
-      {showNavigation && (
-        <Navigation 
-          currentPage={currentPage} 
-          onPageChange={setCurrentPage}
-          isLoggedIn={isSignedIn}
-          userName={user?.name || ""}
-          onSignUp={handleSignUp}
-          onSignIn={handleSignIn}
+  // Render appropriate page
+  switch (currentPage) {
+    case 'welcome':
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-[#FCFCFC] to-[#F5E6CC]/30">
+          <WelcomePopup
+            isOpen={!isSignedIn && currentPage === 'welcome'}
+            onRoleSelect={handleRoleSelect}
+          />
+        </div>
+      );
+
+    case 'login':
+      return (
+        <LoginSignupPage
+          onBack={handleNavigateToHome}
+          onLawyerRegistration={handleNavigateToLawyerReg}
+          onUserHome={handleNavigateToHome}
+          mode="signin"
+          onNavigateToHome={handleNavigateToHome}
+          onNavigateToSignIn={handleNavigateToLogin}
+          onNavigateToSignUp={() => setCurrentPage('login')}
+          onNavigateToLawyerRegistration={handleNavigateToLawyerReg}
+        />
+      );
+
+    case 'lawyer-registration':
+      return (
+        <LawyerRegistrationPage
+          onBack={handleNavigateToHome}
+          onRegistrationComplete={() => setCurrentPage('attorney-dashboard')}
+          onNavigateToSignIn={handleNavigateToLogin}
+          onNavigateToSignUp={handleNavigateToLogin}
+          onNavigateToDashboard={() => setCurrentPage('lawyer-dashboard')}
+          onNavigateToHome={handleNavigateToHome}
+        />
+      );
+
+    case 'lawyer-dashboard':
+      // Auth guard: redirect unauthenticated users
+      if (!isSignedIn || !user) {
+        setCurrentPage('welcome');
+        return null;
+      }
+      return (
+        <LawyerDashboard
+          userName={user?.name || 'Lawyer'}
+          onLogout={handleLogout}
+          onNavigateToSignIn={handleNavigateToLogin}
+          onNavigateToSignUp={handleNavigateToLogin}
+          onNavigateToLawyerRegistration={handleNavigateToLawyerReg}
+          onNavigateToHome={handleNavigateToHome}
+        />
+      );
+
+    case 'user-home':
+      // Auth guard: redirect unauthenticated users
+      if (!isSignedIn || !user) {
+        setCurrentPage('welcome');
+        return null;
+      }
+      return (
+        <UserHomePage
+          onNavigateToLogin={handleNavigateToLogin}
+          onNavigateToChat={() => {
+            // TODO: Navigate to chat page
+            console.log('Navigating to chat');
+          }}
           onLogout={handleLogout}
         />
-      )}
-      {renderPage()}
-    </div>
-  );
+      );
+
+    default:
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-[#36454F] mb-4">Page Not Found</h1>
+            <button
+              onClick={handleNavigateToHome}
+              className="px-6 py-2 bg-[#D4AF37] hover:bg-[#B8941F] text-white rounded-lg"
+            >
+              Go to Home
+            </button>
+          </div>
+        </div>
+      );
+  }
 }

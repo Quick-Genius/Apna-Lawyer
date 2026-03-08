@@ -53,13 +53,18 @@ class ApiService {
     };
   }
 
+  private requireAuth(): void {
+    if (!this.isUserSignedIn()) {
+      throw new Error('Please sign in to access this feature');
+    }
+  }
+
   async sendMessage(message: string, image?: string, systemPrompt?: string): Promise<ChatResponse> {
-    // Allow both authenticated and anonymous users
-    const headers = this.isUserSignedIn() ? this.getAuthHeaders() : { 'Content-Type': 'application/json' };
+    this.requireAuth();
 
     const response = await fetch(`${API_BASE_URL}/chats/api/`, {
       method: 'POST',
-      headers,
+      headers: this.getAuthHeaders(),
       body: JSON.stringify({
         message,
         image,
@@ -76,9 +81,7 @@ class ApiService {
   }
 
   async getChatHistory(): Promise<ChatHistoryResponse> {
-    if (!this.isUserSignedIn()) {
-      throw new Error('Please sign in to view chat history');
-    }
+    this.requireAuth();
 
     const response = await fetch(`${API_BASE_URL}/chats/chat/history/`, {
       method: 'GET',
@@ -94,12 +97,11 @@ class ApiService {
   }
 
   async extractTextFromImage(image: string): Promise<{ extracted_text: string; success: boolean }> {
-    // Allow both authenticated and anonymous users
-    const headers = this.isUserSignedIn() ? this.getAuthHeaders() : { 'Content-Type': 'application/json' };
+    this.requireAuth();
 
     const response = await fetch(`${API_BASE_URL}/chats/extract-text/`, {
       method: 'POST',
-      headers,
+      headers: this.getAuthHeaders(),
       body: JSON.stringify({ image })
     });
 
@@ -126,15 +128,14 @@ class ApiService {
   }
 
   async extractTextFromDocument(file: File): Promise<{ extracted_text: string; success: boolean }> {
+    this.requireAuth();
+
     const formData = new FormData();
     formData.append('file', file);
 
-    // Allow both authenticated and anonymous users
-    const headers = this.isUserSignedIn() ? this.getFileUploadHeaders() : {};
-
     const response = await fetch(`${API_BASE_URL}/api/extract-doc/`, {
       method: 'POST',
-      headers,
+      headers: this.getFileUploadHeaders(),
       body: formData
     });
 
@@ -147,15 +148,14 @@ class ApiService {
   }
 
   async ocrImage(file: File): Promise<{ extracted_text: string; success: boolean }> {
+    this.requireAuth();
+
     const formData = new FormData();
     formData.append('image', file);
 
-    // Allow both authenticated and anonymous users
-    const headers = this.isUserSignedIn() ? this.getFileUploadHeaders() : {};
-
     const response = await fetch(`${API_BASE_URL}/api/ocr-image/`, {
       method: 'POST',
-      headers,
+      headers: this.getFileUploadHeaders(),
       body: formData
     });
 

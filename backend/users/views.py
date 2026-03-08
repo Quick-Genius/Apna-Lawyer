@@ -1,291 +1,181 @@
-"""
-Authentication views with JWT support and Supabase integration.
-Provides secure user registration, login, logout, and profile management.
-"""
-
-from rest_framework import status, generics
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import status, views
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
-from django.contrib.auth import authenticate, login, logout
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import get_user_model
-from django.db import transaction
-import logging
-
-from .serializers import (
-    UserRegistrationSerializer,
-    UserLoginSerializer,
-    UserProfileSerializer,
-    ChangePasswordSerializer
-)
-from .supabase_service import supabase_user_service
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
-logger = logging.getLogger(__name__)
 
 
-class SignupView(APIView):
-    """
-    User registration endpoint.
-    Creates user in Django and syncs to Supabase.
-    """
+class SignupView(views.APIView):
+    """User signup endpoint"""
     permission_classes = [AllowAny]
 
     def post(self, request):
-        """
-        Register a new user.
-        
-        Expected payload:
-        {
-            "name": "John Doe",
-            "email": "john@example.com",
-            "password": "securepassword123",
-            "password_confirm": "securepassword123",
-            "residence": "New York",
-            "is_lawyer": false
-        }
-        """
-        serializer = UserRegistrationSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            try:
-                with transaction.atomic():
-                    # Create user in Django
-                    user = serializer.save()
-                    
-                    # Sync user to Supabase
-                    supabase_result = supabase_user_service.sync_user_to_supabase(user)
-                    
-                    if not supabase_result:
-                        logger.warning(f"Failed to sync user {user.email} to Supabase")
-                    
-                    # Generate JWT tokens
-                    refresh = RefreshToken.for_user(user)
-                    access_token = refresh.access_token
-                    
-                    return Response({
-                        'message': 'User registered successfully',
-                        'user': {
-                            'id': str(user.id),
-                            'name': user.name,
-                            'email': user.email,
-                            'is_lawyer': user.is_lawyer,
-                            'residence': user.residence
-                        },
-                        'tokens': {
-                            'access': str(access_token),
-                            'refresh': str(refresh)
-                        }
-                    }, status=status.HTTP_201_CREATED)
-                    
-            except Exception as e:
-                logger.error(f"Error during user registration: {str(e)}")
+        try:
+            data = request.data
+            username = data.get('email')
+            email = data.get('email')
+            password = data.get('password')
+            name = data.get('name', email)
+
+            if not all([email, password]):
                 return Response({
-                    'error': 'Registration failed. Please try again.'
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    'error': 'Missing required fields',
+                    'fields_required': ['email', 'password']
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if User.objects.filter(email=email).exists():
+                return Response({
+                    'error': 'User with this email already exists'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+            )
+            if hasattr(user, 'name'):
+                user.name = name
+                user.save()
+
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'message': 'User registered successfully',
+                'user': {
+                    'id': user.id,
+                    'name': getattr(user, 'name', user.username),
+                    'email': user.email,
+                },
+                'tokens': {
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                }
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LoginView(APIView):
-    """
-    User login endpoint with JWT token generation.
-    """
+class LoginView(views.APIView):
+    """User login endpoint"""
     permission_classes = [AllowAny]
 
     def post(self, request):
-        """
-        Authenticate user and return JWT tokens.
-        
-        Expected payload:
-        {
-            "email": "john@example.com",
-            "password": "securepassword123"
-        }
-        """
-        serializer = UserLoginSerializer(data=request.data, context={'request': request})
-        
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            
-            # Generate JWT tokens
+        try:
+            email = request.data.get('email')
+            password = request.data.get('password')
+
+            if not email or not password:
+                return Response({
+                    'error': 'Email and password required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            user = User.objects.filter(email=email).first()
+            if not user or not user.check_password(password):
+                return Response({
+                    'error': 'Invalid credentials'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             refresh = RefreshToken.for_user(user)
-            access_token = refresh.access_token
-            
-            # Log the user in (for session-based auth compatibility)
-            login(request, user)
-            
             return Response({
                 'message': 'Login successful',
                 'user': {
-                    'id': str(user.id),
-                    'name': user.name,
+                    'id': user.id,
+                    'name': getattr(user, 'name', user.username),
                     'email': user.email,
-                    'is_lawyer': user.is_lawyer,
-                    'residence': user.residence
                 },
                 'tokens': {
-                    'access': str(access_token),
-                    'refresh': str(refresh)
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
                 }
-            }, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LogoutView(APIView):
-    """
-    User logout endpoint.
-    Blacklists the refresh token and clears session.
-    """
+class LogoutView(views.APIView):
+    """User logout endpoint"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        """
-        Logout user by blacklisting refresh token.
-        
-        Expected payload:
-        {
-            "refresh": "refresh_token_here"
-        }
-        """
-        try:
-            refresh_token = request.data.get('refresh')
-            
-            if refresh_token:
-                # Blacklist the refresh token
-                token = RefreshToken(refresh_token)
-                token.blacklist()
-            
-            # Clear session
-            logout(request)
-            
-            return Response({
-                'message': 'Logout successful'
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            logger.error(f"Error during logout: {str(e)}")
-            return Response({
-                'message': 'Logout successful'  # Still return success even if token blacklisting fails
-            }, status=status.HTTP_200_OK)
+        return Response({'message': 'Logout successful'})
 
 
-class ProfileView(APIView):
-    """
-    User profile management endpoint.
-    """
+class ProfileView(views.APIView):
+    """User profile endpoint"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """Get current user profile."""
-        serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        user = request.user
+        return Response({
+            'id': user.id,
+            'name': getattr(user, 'name', user.username),
+            'email': user.email,
+        })
 
     def put(self, request):
-        """Update user profile."""
-        serializer = UserProfileSerializer(
-            request.user, 
-            data=request.data, 
-            partial=True
-        )
-    
-    def patch(self, request):
-        """Partially update user profile."""
-        return self.put(request)  # Use same logic as PUT
-        
-        if serializer.is_valid():
-            try:
-                user = serializer.save()
-                
-                # Try to sync updated user to Supabase (don't fail if this fails)
-                try:
-                    supabase_result = supabase_user_service.sync_user_to_supabase(user)
-                    if not supabase_result:
-                        logger.warning(f"Failed to sync updated user {user.email} to Supabase")
-                except Exception as e:
-                    logger.warning(f"Supabase sync error for user {user.email}: {str(e)}")
-                
-                return Response(serializer.data, status=status.HTTP_200_OK)
-                    
-            except Exception as e:
-                logger.error(f"Error updating user profile: {str(e)}")
-                return Response({
-                    'error': 'Profile update failed. Please try again.'
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        name = request.data.get('name')
+        if name and hasattr(user, 'name'):
+            user.name = name
+            user.save()
+        return Response({
+            'message': 'Profile updated',
+            'user': {
+                'id': user.id,
+                'name': getattr(user, 'name', user.username),
+                'email': user.email,
+            }
+        })
 
 
-class ChangePasswordView(APIView):
-    """
-    Change user password endpoint.
-    """
+class ChangePasswordView(views.APIView):
+    """Change password endpoint"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        """
-        Change user password.
-        
-        Expected payload:
-        {
-            "old_password": "currentpassword",
-            "new_password": "newpassword123",
-            "new_password_confirm": "newpassword123"
-        }
-        """
-        serializer = ChangePasswordSerializer(
-            data=request.data,
-            context={'request': request}
-        )
-        
-        if serializer.is_valid():
-            try:
-                serializer.save()
-                return Response({
-                    'message': 'Password changed successfully'
-                }, status=status.HTTP_200_OK)
-                
-            except Exception as e:
-                logger.error(f"Error changing password: {str(e)}")
-                return Response({
-                    'error': 'Password change failed. Please try again.'
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+
+        if not user.check_password(old_password):
+            return Response({'error': 'Invalid password'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+        return Response({'message': 'Password changed successfully'})
 
 
-# Legacy API views for backward compatibility
+# Legacy function-based views for backward compatibility
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def signup_view(request):
-    """Legacy signup endpoint - redirects to new class-based view."""
-    view = SignupView()
-    return view.post(request)
+    """Legacy signup endpoint"""
+    return SignupView().post(request)
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
-    """Legacy login endpoint - redirects to new class-based view."""
-    view = LoginView()
-    return view.post(request)
+    """Legacy login endpoint"""
+    return LoginView().post(request)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-    """Legacy logout endpoint - redirects to new class-based view."""
-    view = LogoutView()
-    return view.post(request)
+    """Legacy logout endpoint"""
+    return Response({'message': 'Logout successful'})
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def profile_view(request):
-    """Legacy profile endpoint - redirects to new class-based view."""
-    view = ProfileView()
-    return view.get(request)
+    """Legacy profile endpoint"""
+    user = request.user
+    return Response({
+        'id': user.id,
+        'name': getattr(user, 'name', user.username),
+        'email': user.email,
+    })
